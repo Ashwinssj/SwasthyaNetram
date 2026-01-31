@@ -1,10 +1,10 @@
 from rest_framework import viewsets
-from .models import Patient
-from .serializers import PatientSerializer
+from .models import Appointment
+from .serializers import AppointmentSerializer
 
-class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all().order_by('-created_at')
-    serializer_class = PatientSerializer
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
 
     def get_queryset(self):
         queryset = super().get_queryset()
