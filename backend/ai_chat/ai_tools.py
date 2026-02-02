@@ -5,27 +5,35 @@ import datetime
 
 # --- Tool Functions ---
 
-def search_patients(name_query: str):
+def search_patients(name_query: str, hospital_id: int):
     """
-    Search for patients by name.
+    Search for patients by name within a specific hospital.
     Args:
         name_query: The name (or partial name) to search for.
+        hospital_id: The ID of the hospital to search in.
     """
-    patients = Patient.objects.filter(
-        Q(first_name__icontains=name_query) | Q(last_name__icontains=name_query)
-    )[:5]
+    query = Q(first_name__icontains=name_query) | Q(last_name__icontains=name_query)
+    if hospital_id:
+        query &= Q(hospital_id=hospital_id)
+        
+    patients = Patient.objects.filter(query)[:5]
     
     if not patients.exists():
-        return "No patients found with that name."
+        return "No patients found with that name in this hospital."
         
     results = []
     for p in patients:
+        lab_reports = [r.title for r in p.lab_reports.all()]
+        soap_notes = [f"{n.created_at.date()} (Dr. {n.doctor.last_name if n.doctor else 'Unknown'}): {n.assessment}" for n in p.soap_notes.all()]
+        
         results.append({
             "id": p.id,
             "name": f"{p.first_name} {p.last_name}",
             "medical_history": p.medical_history, 
             "phone": p.contact_number,
-            "gender": p.gender
+            "gender": p.gender,
+            "lab_reports": lab_reports,
+            "soap_notes": soap_notes
         })
     return results
 

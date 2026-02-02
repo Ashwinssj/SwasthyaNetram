@@ -26,3 +26,9 @@ urlpatterns = [
     path('api/appointments/', include('appointments.urls')),
     path('api/ai/', include('ai_chat.urls')),
 ]
+
+from django.conf import settings
+from django.conf.urls.static import static
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

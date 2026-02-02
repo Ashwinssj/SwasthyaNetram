@@ -21,3 +21,24 @@ class Patient(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+class LabReport(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='lab_reports')
+    title = models.CharField(max_length=200)
+    file = models.FileField(upload_to='lab_reports/', blank=True, null=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} for {self.patient}"
+
+class SOAPNote(models.Model):
+    patient = models.ForeignKey(Patient, on_delete=models.CASCADE, related_name='soap_notes')
+    doctor = models.ForeignKey('employees.Employee', on_delete=models.SET_NULL, null=True, related_name='authored_soap_notes')
+    subjective = models.TextField()
+    objective = models.TextField()
+    assessment = models.TextField()
+    plan = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"SOAP Note for {self.patient} on {self.created_at.date()}"
