@@ -1,13 +1,39 @@
 from patients.models import Patient
 from appointments.models import Appointment
+from .rag_utils import semantic_search_patients
 from django.db.models import Q
 import datetime
 
 # --- Tool Functions ---
 
+def analyze_patient_records(query: str, hospital_id: int):
+    """
+    Use this tool to semantically search and analyze patient records based on a descriptive query.
+    Examples: "Find patients with back pain", "Who are the diabetic patients?", "What are John's symptoms?"
+    Args:
+        query: The detailed medical or descriptive query to search for.
+        hospital_id: The ID of the hospital to search in.
+    """
+    print(f"RAG Search Query: {query}")
+    results = semantic_search_patients(query, hospital_id, limit=3)
+    
+    if not results:
+        return f"No relevant patients found for the query: '{query}'."
+        
+    output = []
+    output.append(f"Found {len(results)} relevant patients:")
+    for i, res in enumerate(results):
+        score = res['score']
+        text = res['text']
+        output.append(f"\n--- Patient {i+1} (Relevance Score: {score:.2f}) ---")
+        output.append(text)
+        
+    return "\n".join(output)
+
 def search_patients(name_query: str, hospital_id: int):
     """
-    Search for patients by name within a specific hospital.
+    Search for patients by exact or partial name within a specific hospital. 
+    Use analyze_patient_records if searching by symptoms or history.
     Args:
         name_query: The name (or partial name) to search for.
         hospital_id: The ID of the hospital to search in.
@@ -78,6 +104,7 @@ def get_upcoming_appointments(hospital_id: int):
 # Map of available tools for the Agent
 available_tools = {
     'search_patients': search_patients,
+    'analyze_patient_records': analyze_patient_records,
     'update_patient_medical_history': update_patient_medical_history,
     'get_upcoming_appointments': get_upcoming_appointments
 }

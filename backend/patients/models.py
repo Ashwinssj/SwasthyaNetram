@@ -15,7 +15,9 @@ class Patient(models.Model):
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     contact_number = models.CharField(max_length=15)
     address = models.TextField()
+    symptoms = models.TextField(blank=True, null=True)
     medical_history = models.TextField(blank=True, null=True)
+    embedding_json = models.TextField(blank=True, null=True, help_text="Stores the JSON representation of the patient vector embedding")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

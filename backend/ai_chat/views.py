@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import status, permissions, viewsets
 from .models import ChatSession, ChatMessage
 from .serializers import ChatMessageSerializer, ChatSessionSerializer, ChatSessionListSerializer
-from .ai_tools import available_tools, search_patients, update_patient_medical_history
+from .ai_tools import available_tools, search_patients, update_patient_medical_history, analyze_patient_records
 import json
 
 # Configure Gemini
@@ -56,7 +56,7 @@ class ChatView(APIView):
         if GENAI_API_KEY:
             try:
                 # Initialize Model with Tools
-                tools_list = [search_patients, update_patient_medical_history]
+                tools_list = [search_patients, analyze_patient_records, update_patient_medical_history]
                 
                 model = genai.GenerativeModel(
                     'gemini-3-flash-preview',
@@ -79,7 +79,8 @@ class ChatView(APIView):
                 system_instruction = (
                     "You are Swasthya AI, a helpful medical assistant for doctors.\n"
                     "You have legitimate access to patient data via tools.\n"
-                    "Use 'search_patients' to find IDs before updating.\n"
+                    "Use 'analyze_patient_records' to find patients by symptoms, medical history, or descriptions (Semantic Search).\n"
+                    "Use 'search_patients' to find patients by exact name before updating.\n"
                     "ALWAYS confirm with the user before finalizing an update if unsure.\n"
                     f"Current Hospital ID context: {hospital_id}\n"
                 )

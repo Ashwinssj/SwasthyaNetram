@@ -36,7 +36,6 @@ export function AddLabReportModal({ isOpen, onClose, onSuccess, patientId }: Add
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
-                    // Content-Type is set automatically by browser for FormData
                 },
                 body: formData,
             });

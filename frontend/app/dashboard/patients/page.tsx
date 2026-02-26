@@ -15,6 +15,7 @@ interface Patient {
     created_at: string;
     date_of_birth?: string;
     address?: string;
+    symptoms?: string;
 }
 
 import { useHospital } from "@/context/HospitalContext";

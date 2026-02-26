@@ -14,6 +14,7 @@ interface Patient {
     created_at: string;
     date_of_birth?: string; // Optional as it might not be in the list view initially
     address?: string;       // Optional
+    symptoms?: string;
     hospital?: number;      // Optional
     medical_history?: string | null;
     lab_reports?: {
@@ -187,6 +188,13 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
                                 <div className="mt-1 flex items-start text-gray-900 dark:text-white">
                                     <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
                                     <span>{patient.address || "No address provided"}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Symptoms</label>
+                                <div className="mt-1 flex items-start text-gray-900 dark:text-white p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+                                    <Activity className="h-4 w-4 mr-2 text-red-500 mt-0.5" />
+                                    <span className="text-red-900 dark:text-red-200">{patient.symptoms || "No symptoms recorded"}</span>
                                 </div>
                             </div>
                             <div>

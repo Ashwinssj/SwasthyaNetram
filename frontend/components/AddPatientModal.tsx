@@ -21,6 +21,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
         gender: "M",
         contact_number: "",
         address: "",
+        symptoms: "",
     });
 
     if (!isOpen) return null;
@@ -63,6 +64,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                     gender: "M",
                     contact_number: "",
                     address: "",
+                    symptoms: "",
                 });
             } else {
                 const data = await res.json();
@@ -179,6 +181,20 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                             value={formData.address}
                             onChange={handleChange}
                             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Symptoms (Reason for visit)
+                        </label>
+                        <textarea
+                            name="symptoms"
+                            rows={3}
+                            value={formData.symptoms}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            placeholder="Describe the symptoms the patient is experiencing..."
                         />
                     </div>
 
