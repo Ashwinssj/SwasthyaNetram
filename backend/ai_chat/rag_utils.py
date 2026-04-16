@@ -36,6 +36,19 @@ def get_patient_text(patient: Patient) -> str:
             dr_name = f"Dr. {note.doctor.last_name}" if note.doctor else "Doctor"
             parts.append(f"- On {note.created_at.date()} by {dr_name}: Assessment: {note.assessment}. Plan: {note.plan}")
             
+    # Include Lab Reports text
+    lab_reports = patient.lab_reports.all().order_by('-uploaded_at')[:5]
+    if lab_reports:
+        parts.append("Recent Lab Reports/Documents:")
+        for report in lab_reports:
+            parts.append(f"- Document: {report.title} (Uploaded {report.uploaded_at.date()})")
+            if report.extracted_text:
+                # Add snippet of the text, limit to 2000 chars per report
+                snippet = report.extracted_text[:2000]
+                parts.append(f"  Content snippet: {snippet}...")
+            else:
+                parts.append("  (No text extracted)")
+            
     return "\n".join(parts)
 
 def embed_text(text: str) -> list[float]:

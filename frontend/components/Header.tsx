@@ -13,6 +13,7 @@ export function Header({ title }: { title: string }) {
     const selectedHospital = hospitals.find(h => h.id === selectedHospitalId);
     const router = useRouter();
     const [isAddHospitalOpen, setIsAddHospitalOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
     const handleLogout = () => {
         localStorage.removeItem("access_token");
@@ -114,9 +115,30 @@ export function Header({ title }: { title: string }) {
                             className="h-9 w-64 rounded-md border border-gray-200 bg-gray-50 pl-9 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
                         />
                     </div>
-                    <button className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                        <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-                    </button>
+                    {/* Notifications Menu */}
+                    <div className="relative">
+                        <button 
+                            onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                            onBlur={() => setTimeout(() => setIsNotificationsOpen(false), 200)}
+                            className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors relative"
+                        >
+                            <Bell className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                            {/* Optional: Add a red dot here if there are unread notifications */}
+                        </button>
+                        
+                        {isNotificationsOpen && (
+                            <div className="absolute top-full right-0 mt-2 w-72 z-50">
+                                <div className="bg-white rounded-xl shadow-lg border border-gray-100 dark:bg-gray-900 dark:border-gray-800 overflow-hidden py-2">
+                                    <div className="flex items-center justify-between px-4 pb-2 border-b border-gray-100 dark:border-gray-800">
+                                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</h3>
+                                    </div>
+                                    <div className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                                        No new notifications
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <ThemeSwitcher />
 
                     {/* Profile Menu */}
