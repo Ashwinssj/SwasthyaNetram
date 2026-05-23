@@ -19,6 +19,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
         last_name: "",
         date_of_birth: "",
         gender: "M",
+        blood_group: "",
         contact_number: "",
         address: "",
         symptoms: "",
@@ -42,7 +43,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
         }
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/patients/", {
+            const res = await fetch("http://127.0.0.1:8080/api/patients/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -62,6 +63,7 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                     last_name: "",
                     date_of_birth: "",
                     gender: "M",
+                    blood_group: "",
                     contact_number: "",
                     address: "",
                     symptoms: "",
@@ -153,6 +155,27 @@ export function AddPatientModal({ isOpen, onClose, onSuccess }: AddPatientModalP
                                 <option value="M">Male</option>
                                 <option value="F">Female</option>
                                 <option value="O">Other</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                Blood Group
+                            </label>
+                            <select
+                                name="blood_group"
+                                value={formData.blood_group}
+                                onChange={handleChange}
+                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                            >
+                                <option value="">-- Choose Blood Group --</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
                             </select>
                         </div>
                         <div>

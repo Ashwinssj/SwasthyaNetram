@@ -26,7 +26,7 @@ export default function Dashboard() {
     setLoading(true);
     const token = localStorage.getItem("access_token");
 
-    fetch(`http://127.0.0.1:8000/api/dashboard/stats/?hospital_id=${selectedHospitalId}`, {
+    fetch(`http://127.0.0.1:8080/api/dashboard/stats/?hospital_id=${selectedHospitalId}`, {
       headers: {
         "Authorization": `Bearer ${token}`,
       }

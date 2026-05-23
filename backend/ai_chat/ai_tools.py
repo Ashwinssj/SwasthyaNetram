@@ -3,9 +3,11 @@ from appointments.models import Appointment
 from .rag_utils import semantic_search_patients
 from django.db.models import Q
 import datetime
+from langchain_core.tools import tool
 
 # --- Tool Functions ---
 
+@tool
 def analyze_patient_records(query: str, hospital_id: int):
     """
     Use this tool to semantically search and analyze patient records based on a descriptive query.
@@ -30,6 +32,7 @@ def analyze_patient_records(query: str, hospital_id: int):
         
     return "\n".join(output)
 
+@tool
 def search_patients(name_query: str, hospital_id: int):
     """
     Search for patients by exact or partial name within a specific hospital. 
@@ -63,6 +66,7 @@ def search_patients(name_query: str, hospital_id: int):
         })
     return results
 
+@tool
 def update_patient_medical_history(patient_id: int, new_history: str):
     """
     Update the medical history/diagnosis for a specific patient.
@@ -81,6 +85,7 @@ def update_patient_medical_history(patient_id: int, new_history: str):
     except Exception as e:
         return f"Error updating patient: {str(e)}"
 
+@tool
 def get_upcoming_appointments(hospital_id: int):
     """
     Get list of upcoming appointments for the hospital.

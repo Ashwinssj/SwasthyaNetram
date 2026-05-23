@@ -30,7 +30,7 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
 
     const fetchHospitals = () => {
         setLoading(true);
-        fetch("http://127.0.0.1:8000/api/hospitals/")
+        fetch("http://127.0.0.1:8080/api/hospitals/")
             .then((res) => res.json())
             .then((data) => {
                 setHospitals(data);
@@ -55,7 +55,7 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
 
     const addHospital = async (hospitalData: Omit<Hospital, "id">) => {
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/hospitals/", {
+            const res = await fetch("http://127.0.0.1:8080/api/hospitals/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -79,7 +79,7 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
 
     const deleteHospital = async (id: number) => {
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/hospitals/${id}/`, {
+            const res = await fetch(`http://127.0.0.1:8080/api/hospitals/${id}/`, {
                 method: "DELETE",
             });
 

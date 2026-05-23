@@ -27,7 +27,7 @@ export function AddSOAPNoteModal({ isOpen, onClose, onSuccess, patientId }: AddS
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/patients/notes/", {
+            const res = await fetch("http://127.0.0.1:8080/api/patients/notes/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

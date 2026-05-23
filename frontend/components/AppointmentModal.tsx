@@ -32,7 +32,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
             const headers = { "Authorization": `Bearer ${token}` };
 
             // Fetch doctors
-            fetch(`http://127.0.0.1:8000/api/employees/?hospital_id=${selectedHospitalId}`, { headers })
+            fetch(`http://127.0.0.1:8080/api/employees/?hospital_id=${selectedHospitalId}`, { headers })
                 .then(res => res.json())
                 .then(data => {
                     if (Array.isArray(data)) {
@@ -42,7 +42,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
                 });
 
             // Fetch patients
-            fetch(`http://127.0.0.1:8000/api/patients/?hospital_id=${selectedHospitalId}`, { headers })
+            fetch(`http://127.0.0.1:8080/api/patients/?hospital_id=${selectedHospitalId}`, { headers })
                 .then(res => res.json())
                 .then(data => {
                     if (Array.isArray(data)) setPatients(data);
@@ -56,7 +56,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
 
         try {
             const token = localStorage.getItem("access_token");
-            const res = await fetch("http://127.0.0.1:8000/api/appointments/", {
+            const res = await fetch("http://127.0.0.1:8080/api/appointments/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

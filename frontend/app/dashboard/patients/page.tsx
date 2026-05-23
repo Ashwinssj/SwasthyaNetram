@@ -34,7 +34,7 @@ export default function PatientsPage() {
         setLoading(true);
         const token = localStorage.getItem("access_token");
 
-        fetch(`http://127.0.0.1:8000/api/patients/?hospital_id=${selectedHospitalId}`, {
+        fetch(`http://127.0.0.1:8080/api/patients/?hospital_id=${selectedHospitalId}`, {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",

@@ -32,7 +32,7 @@ export function AddLabReportModal({ isOpen, onClose, onSuccess, patientId }: Add
         formData.append("file", file);
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/patients/reports/", {
+            const res = await fetch("http://127.0.0.1:8080/api/patients/reports/", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,

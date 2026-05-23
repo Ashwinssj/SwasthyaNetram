@@ -1,6 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .models import Hospital
+from .models import Hospital, Room
 from patients.models import Patient
 from employees.models import Employee
 
@@ -47,12 +47,31 @@ class DashboardStatsView(APIView):
         
         upcoming_schedule = AppointmentSerializer(appointments_queryset, many=True).data
 
+        # Dynamic room occupancy calculation
+        if hospital_id:
+            total_rooms = Room.objects.filter(hospital_id=hospital_id).count()
+            occupied_rooms = Room.objects.filter(hospital_id=hospital_id, current_patient__isnull=False).count()
+        else:
+            total_rooms = Room.objects.count()
+            occupied_rooms = Room.objects.filter(current_patient__isnull=False).count()
+
+        available_rooms = total_rooms - occupied_rooms
+
+        if total_rooms > 0:
+            occupancy_percent = int((occupied_rooms / total_rooms) * 100)
+            room_occupancy = f"{occupancy_percent}%"
+        else:
+            room_occupancy = "0%"
+
         return Response({
             'total_patients': patients_count,
             'total_employees': employees_count,
             'total_doctors': doctors_count,
             'operations': 8, 
-            'room_occupancy': "85%",
+            'room_occupancy': room_occupancy,
+            'total_rooms': total_rooms,
+            'occupied_rooms': occupied_rooms,
+            'available_rooms': available_rooms,
             'chart_data': formatted_chart_data,
             'upcoming_schedule': upcoming_schedule
         })

@@ -1,17 +1,12 @@
 import os
-import google.generativeai as genai
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions, viewsets
 from .models import ChatSession, ChatMessage
 from .serializers import ChatMessageSerializer, ChatSessionSerializer, ChatSessionListSerializer
-from .ai_tools import available_tools, search_patients, update_patient_medical_history, analyze_patient_records
+from langchain_core.messages import HumanMessage, AIMessage
+from .agent import agent_graph
 import json
-
-# Configure Gemini
-GENAI_API_KEY = os.getenv('GEMINI_API_KEY')
-if GENAI_API_KEY:
-    genai.configure(api_key=GENAI_API_KEY)
 
 class ChatSessionViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
@@ -52,55 +47,38 @@ class ChatView(APIView):
         ChatMessage.objects.create(session=session, role='user', content=user_message)
 
         ai_response_text = "I'm having trouble thinking right now."
+        api_key = os.getenv('GEMINI_API_KEY')
 
-        if GENAI_API_KEY:
+        if api_key:
             try:
-                # Initialize Model with Tools
-                tools_list = [search_patients, analyze_patient_records, update_patient_medical_history]
-                
-                model = genai.GenerativeModel(
-                    'gemini-3-flash-preview',
-                    tools=tools_list
-                )
-                
-                # Fetch history for this SPECIFIC session
+                # Fetch history for this SPECIFIC session from the database
                 history_messages = []
                 for msg in session.messages.order_by('timestamp'):
-                    # Gemini history format: {'role': 'user'|'model', 'parts': [text]}
-                    history_messages.append({
-                        'role': 'user' if msg.role == 'user' else 'model',
-                        'parts': [msg.content]
-                    })
+                    if msg.role == 'user':
+                        history_messages.append(HumanMessage(content=msg.content))
+                    else:
+                        history_messages.append(AIMessage(content=msg.content))
                 
-                # Start chat with history
-                chat = model.start_chat(history=history_messages, enable_automatic_function_calling=True)
+                # Execute the LangGraph stateful agent
+                inputs = {
+                    "messages": history_messages,
+                    "hospital_id": int(hospital_id) if hospital_id else 0
+                }
                 
-                # System Prompt injection
-                system_instruction = (
-                    "You are Swasthya AI, a helpful medical assistant for doctors.\n"
-                    "You have legitimate access to patient data via tools.\n"
-                    "Use 'analyze_patient_records' to find patients by symptoms, medical history, or descriptions (Semantic Search).\n"
-                    "Use 'search_patients' to find patients by exact name before updating.\n"
-                    "ALWAYS confirm with the user before finalizing an update if unsure.\n"
-                    f"Current Hospital ID context: {hospital_id}\n"
-                )
+                result = agent_graph.invoke(inputs)
                 
-                # Send Message
-                # Note: We don't send system instruction every time if history is loaded, 
-                # but for statelss rest API it's safer to re-inject or rely on history.
-                # Here we just send the user message since history is loaded.
-                response = chat.send_message(f"System Context: {system_instruction}\nUser: {user_message}")
-                ai_response_text = response.text
+                # Retrieve the terminal agent message content
+                ai_response_text = result["messages"][-1].content
                 
             except Exception as e:
-                error_msg = f"AI Error: {str(e)}"
+                error_msg = f"AI Graph Error: {str(e)}"
                 print(error_msg)
                 ai_response_text = f"I encountered an error: {str(e)}"
         else:
-            ai_response_text = "AI API Key is missing."
+            ai_response_text = "AI API Key is missing. Please configure GEMINI_API_KEY in your .env file."
 
         # 3. Save AI Message
-        ai_msg = ChatMessage.objects.create(session=session, role='assistant', content=ai_response_text)
+        ChatMessage.objects.create(session=session, role='assistant', content=ai_response_text)
         
         # Update session timestamp
         session.save()

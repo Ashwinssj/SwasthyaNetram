@@ -46,7 +46,7 @@ export default function AIAssistantPage() {
     const fetchSessions = async () => {
         const token = localStorage.getItem("access_token");
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/ai/sessions/", {
+            const res = await fetch("http://127.0.0.1:8080/api/ai/sessions/", {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -66,7 +66,7 @@ export default function AIAssistantPage() {
         setCurrentSessionId(sessionId);
         const token = localStorage.getItem("access_token");
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/ai/sessions/${sessionId}/`, {
+            const res = await fetch(`http://127.0.0.1:8080/api/ai/sessions/${sessionId}/`, {
                 headers: { "Authorization": `Bearer ${token}` }
             });
             if (res.ok) {
@@ -90,7 +90,7 @@ export default function AIAssistantPage() {
 
         const token = localStorage.getItem("access_token");
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/ai/sessions/${sessionId}/`, {
+            const res = await fetch(`http://127.0.0.1:8080/api/ai/sessions/${sessionId}/`, {
                 method: "DELETE",
                 headers: { "Authorization": `Bearer ${token}` }
             });
@@ -134,7 +134,7 @@ export default function AIAssistantPage() {
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch("http://127.0.0.1:8000/api/ai/chat/", {
+            const res = await fetch("http://127.0.0.1:8080/api/ai/chat/", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

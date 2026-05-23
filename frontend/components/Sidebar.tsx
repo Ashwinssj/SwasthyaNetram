@@ -11,11 +11,15 @@ import {
     Bot,
     LogOut,
     Calendar,
+    Bed,
+    FileText,
 } from "lucide-react";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "Patients", href: "/dashboard/patients", icon: Users },
+    { name: "Rooms & Wards", href: "/dashboard/rooms", icon: Bed },
+    { name: "Prescriptions", href: "/dashboard/prescriptions", icon: FileText },
     { name: "Employees", href: "/dashboard/employees", icon: UserCog },
     { name: "Schedule", href: "/dashboard/appointments", icon: Calendar },
     { name: "Emergency", href: "/dashboard/emergency", icon: Siren },

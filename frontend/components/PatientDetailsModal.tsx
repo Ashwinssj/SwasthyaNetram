@@ -10,6 +10,7 @@ interface Patient {
     first_name: string;
     last_name: string;
     gender: string;
+    blood_group?: string;
     contact_number: string;
     created_at: string;
     date_of_birth?: string; // Optional as it might not be in the list view initially
@@ -51,11 +52,62 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
     const [history, setHistory] = useState(patient?.medical_history || "");
     const [savingHistory, setSavingHistory] = useState(false);
 
+    // Edit Patient Info Details State
+    const [isEditingInfo, setIsEditingInfo] = useState(false);
+    const [infoFormData, setInfoFormData] = useState({
+        first_name: "",
+        last_name: "",
+        gender: "M",
+        blood_group: "",
+        date_of_birth: "",
+        contact_number: "",
+        address: "",
+        symptoms: "",
+    });
+    const [savingInfo, setSavingInfo] = useState(false);
+
     useEffect(() => {
         if (patient) {
             setHistory(patient.medical_history || "");
+            setInfoFormData({
+                first_name: patient.first_name || "",
+                last_name: patient.last_name || "",
+                gender: patient.gender || "M",
+                blood_group: patient.blood_group || "",
+                date_of_birth: patient.date_of_birth || "",
+                contact_number: patient.contact_number || "",
+                address: patient.address || "",
+                symptoms: patient.symptoms || "",
+            });
         }
     }, [patient]);
+
+    const handleSaveInfo = async () => {
+        if (!patient) return;
+        setSavingInfo(true);
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+
+        try {
+            const res = await fetch(`http://127.0.0.1:8080/api/patients/${patient.id}/`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`,
+                },
+                body: JSON.stringify(infoFormData),
+            });
+
+            if (!res.ok) throw new Error("Failed to update patient details");
+
+            setIsEditingInfo(false);
+            if (onRefresh) onRefresh();
+        } catch (error) {
+            console.error(error);
+            alert("Failed to save patient details.");
+        } finally {
+            setSavingInfo(false);
+        }
+    };
 
     const handleSaveHistory = async () => {
         if (!patient) return;
@@ -63,7 +115,7 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch(`http://127.0.0.1:8000/api/patients/${patient.id}/`, {
+            const res = await fetch(`http://127.0.0.1:8080/api/patients/${patient.id}/`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -153,50 +205,192 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
                 <div className="flex-1 overflow-y-auto p-6">
                     {activeTab === "info" && (
                         <div className="space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gender</label>
-                                    <div className="mt-1 flex items-center text-gray-900 dark:text-white">
-                                        <User className="h-4 w-4 mr-2 text-gray-400" />
-                                        {patient.gender === "M" ? "Male" : patient.gender === "F" ? "Female" : "Other"}
+                            <div className="flex items-center justify-between border-b border-gray-200 dark:border-gray-800 pb-2">
+                                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">Patient Demographics</span>
+                                {!isEditingInfo ? (
+                                    <button
+                                        onClick={() => setIsEditingInfo(true)}
+                                        className="text-blue-600 hover:text-blue-700 text-xs font-semibold flex items-center dark:text-blue-400"
+                                    >
+                                        <Edit2 className="h-3.5 w-3.5 mr-1" />
+                                        Edit Details
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => {
+                                                setIsEditingInfo(false);
+                                                setInfoFormData({
+                                                    first_name: patient.first_name || "",
+                                                    last_name: patient.last_name || "",
+                                                    gender: patient.gender || "M",
+                                                    blood_group: patient.blood_group || "",
+                                                    date_of_birth: patient.date_of_birth || "",
+                                                    contact_number: patient.contact_number || "",
+                                                    address: patient.address || "",
+                                                    symptoms: patient.symptoms || "",
+                                                });
+                                            }}
+                                            className="text-gray-500 hover:text-gray-700 text-xs font-semibold"
+                                            disabled={savingInfo}
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSaveInfo}
+                                            disabled={savingInfo}
+                                            className="text-green-600 hover:text-green-700 text-xs font-semibold flex items-center"
+                                        >
+                                            {savingInfo ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Check className="h-3.5 w-3.5 mr-1" />}
+                                            Save Info
+                                        </button>
                                     </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date of Birth</label>
-                                    <div className="mt-1 flex items-center text-gray-900 dark:text-white">
-                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                        {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : "N/A"}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</label>
-                                    <div className="mt-1 flex items-center text-gray-900 dark:text-white">
-                                        <Phone className="h-4 w-4 mr-2 text-gray-400" />
-                                        {patient.contact_number}
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Registered On</label>
-                                    <div className="mt-1 flex items-center text-gray-900 dark:text-white">
-                                        <Calendar className="h-4 w-4 mr-2 text-gray-400" />
-                                        {new Date(patient.created_at).toLocaleDateString()}
-                                    </div>
-                                </div>
+                                )}
                             </div>
-                            <div>
-                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</label>
-                                <div className="mt-1 flex items-start text-gray-900 dark:text-white">
-                                    <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
-                                    <span>{patient.address || "No address provided"}</span>
+
+                            {isEditingInfo ? (
+                                <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-800/40 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">First Name</label>
+                                        <input
+                                            type="text"
+                                            value={infoFormData.first_name}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, first_name: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Last Name</label>
+                                        <input
+                                            type="text"
+                                            value={infoFormData.last_name}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, last_name: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Gender</label>
+                                        <select
+                                            value={infoFormData.gender}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, gender: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        >
+                                            <option value="M">Male</option>
+                                            <option value="F">Female</option>
+                                            <option value="O">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Blood Group</label>
+                                        <select
+                                            value={infoFormData.blood_group}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, blood_group: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        >
+                                            <option value="">-- Choose Blood Group --</option>
+                                            <option value="A+">A+</option>
+                                            <option value="A-">A-</option>
+                                            <option value="B+">B+</option>
+                                            <option value="B-">B-</option>
+                                            <option value="AB+">AB+</option>
+                                            <option value="AB-">AB-</option>
+                                            <option value="O+">O+</option>
+                                            <option value="O-">O-</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Date of Birth</label>
+                                        <input
+                                            type="date"
+                                            value={infoFormData.date_of_birth}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, date_of_birth: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Contact Number</label>
+                                        <input
+                                            type="tel"
+                                            value={infoFormData.contact_number}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, contact_number: e.target.value })}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Address</label>
+                                        <textarea
+                                            value={infoFormData.address}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, address: e.target.value })}
+                                            rows={2}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
+                                    <div className="col-span-2">
+                                        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400 block mb-1">Symptoms (Reason for visit)</label>
+                                        <textarea
+                                            value={infoFormData.symptoms}
+                                            onChange={(e) => setInfoFormData({ ...infoFormData, symptoms: e.target.value })}
+                                            rows={2}
+                                            className="w-full px-3 py-1.5 border border-gray-300 rounded-lg text-sm bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-white"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
-                            <div>
-                                <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Symptoms</label>
-                                <div className="mt-1 flex items-start text-gray-900 dark:text-white p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
-                                    <Activity className="h-4 w-4 mr-2 text-red-500 mt-0.5" />
-                                    <span className="text-red-900 dark:text-red-200">{patient.symptoms || "No symptoms recorded"}</span>
+                            ) : (
+                                <div className="space-y-6">
+                                    <div className="grid grid-cols-2 gap-6">
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Gender</label>
+                                            <div className="mt-1 flex items-center text-gray-900 dark:text-white">
+                                                <User className="h-4 w-4 mr-2 text-gray-400" />
+                                                {patient.gender === "M" ? "Male" : patient.gender === "F" ? "Female" : "Other"}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Blood Group</label>
+                                            <div className="mt-1 flex items-center text-gray-900 dark:text-white">
+                                                <Activity className="h-4 w-4 mr-2 text-red-500" />
+                                                <span className="font-bold">{patient.blood_group || "Not Recorded"}</span>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Date of Birth</label>
+                                            <div className="mt-1 flex items-center text-gray-900 dark:text-white">
+                                                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                                {patient.date_of_birth ? new Date(patient.date_of_birth).toLocaleDateString() : "N/A"}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</label>
+                                            <div className="mt-1 flex items-center text-gray-900 dark:text-white">
+                                                <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                                                {patient.contact_number}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Registered On</label>
+                                            <div className="mt-1 flex items-center text-gray-900 dark:text-white">
+                                                <Calendar className="h-4 w-4 mr-2 text-gray-400" />
+                                                {new Date(patient.created_at).toLocaleDateString()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Address</label>
+                                        <div className="mt-1 flex items-start text-gray-900 dark:text-white">
+                                            <MapPin className="h-4 w-4 mr-2 text-gray-400 mt-0.5" />
+                                            <span>{patient.address || "No address provided"}</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Symptoms</label>
+                                        <div className="mt-1 flex items-start text-gray-900 dark:text-white p-3 bg-red-50 dark:bg-red-900/10 rounded-lg border border-red-100 dark:border-red-900/30">
+                                            <Activity className="h-4 w-4 mr-2 text-red-500 mt-0.5" />
+                                            <span className="text-red-900 dark:text-red-200">{patient.symptoms || "No symptoms recorded"}</span>
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
+                            )}
+
                             <div>
                                 <div className="flex items-center justify-between mb-1">
                                     <label className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
