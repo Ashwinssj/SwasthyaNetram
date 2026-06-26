@@ -5,7 +5,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { useHospital, Hospital } from "@/context/HospitalContext";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { AddHospitalModal } from "./AddHospitalModal";
 
 export function Header({ title }: { title: string }) {
@@ -14,6 +14,24 @@ export function Header({ title }: { title: string }) {
     const router = useRouter();
     const [isAddHospitalOpen, setIsAddHospitalOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const [profile, setProfile] = useState<{ username: string; email: string; role: string; plan: string } | null>(null);
+
+    useEffect(() => {
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+        if (token) {
+            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/auth/me/`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            .then(res => {
+                if (res.ok) return res.json();
+                throw new Error("Failed to load user profile");
+            })
+            .then(data => setProfile(data))
+            .catch(err => console.error("Error fetching user profile in header:", err));
+        }
+    }, []);
+
+    const initials = profile?.email ? profile.email.slice(0, 2).toUpperCase() : (profile?.username ? profile.username.slice(0, 2).toUpperCase() : "AD");
 
     const handleLogout = () => {
         localStorage.removeItem("access_token");
@@ -143,8 +161,8 @@ export function Header({ title }: { title: string }) {
 
                     {/* Profile Menu */}
                     <div className="relative group">
-                        <button className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium hover:ring-2 hover:ring-blue-300 transition-all">
-                            AD
+                        <button className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-medium hover:ring-2 hover:ring-blue-300 transition-all" title={profile?.email || "Profile"}>
+                            {initials}
                         </button>
 
                         {/* Dropdown Menu with Bridge */}

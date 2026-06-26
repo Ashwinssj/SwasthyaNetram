@@ -33,3 +33,31 @@ class ChangePasswordView(generics.UpdateAPIView):
             return Response({"status": "success", "code": status.HTTP_200_OK, "message": "Password updated successfully"}, status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+from rest_framework.views import APIView
+
+class UserProfileView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        is_admin = user.is_superuser
+        
+        role = "Hospital User"
+        plan = "Standard Access"
+        ai_plan = "Pro Plan"
+        
+        if is_admin:
+            role = "Administrator"
+            plan = "Superuser"
+            ai_plan = "Enterprise Plan"
+            
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email or f"{user.username}@example.com",
+            "is_superuser": user.is_superuser,
+            "role": role,
+            "plan": plan,
+            "ai_plan": ai_plan
+        })

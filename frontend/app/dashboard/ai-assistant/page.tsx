@@ -30,6 +30,7 @@ export default function AIAssistantPage() {
     const [loading, setLoading] = useState(false);
     const [sessionsLoading, setSessionsLoading] = useState(true);
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [profile, setProfile] = useState<{ username: string; email: string; role: string; plan: string; ai_plan: string } | null>(null);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -41,6 +42,19 @@ export default function AIAssistantPage() {
     useEffect(() => {
         scrollToBottom();
     }, [messages]);
+
+    // Fetch Profile
+    useEffect(() => {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/auth/me/`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => setProfile(data))
+            .catch(err => console.error("Error loading user profile:", err));
+        }
+    }, []);
 
     // Fetch Sessions List
     const fetchSessions = async () => {
@@ -254,10 +268,16 @@ export default function AIAssistantPage() {
                     {/* Footer User Profile (Cosmetic) */}
                     <div className="mt-4 border-t border-gray-800 pt-4">
                         <div className="flex items-center gap-3 px-2">
-                            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">DR</div>
-                            <div className="text-sm">
-                                <p className="font-medium text-gray-200">Dr. User</p>
-                                <p className="text-xs text-gray-500">Pro Plan</p>
+                            <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center text-xs font-bold">
+                                {profile?.email ? profile.email.slice(0, 2).toUpperCase() : "DR"}
+                            </div>
+                            <div className="text-sm overflow-hidden flex-1">
+                                <p className="font-medium text-gray-200 truncate" title={profile?.email || "Dr. User"}>
+                                    {profile?.email || "Dr. User"}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                    {profile?.ai_plan || "Pro Plan"}
+                                </p>
                             </div>
                         </div>
                     </div>
