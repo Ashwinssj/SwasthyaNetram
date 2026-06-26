@@ -69,7 +69,7 @@ export default function RoomsPage() {
         if (!selectedHospitalId) return;
         setIsLoading(true);
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
             // 1. Fetch Rooms
@@ -133,7 +133,7 @@ export default function RoomsPage() {
         setErrorMessage("");
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const headers: Record<string, string> = {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -177,7 +177,7 @@ export default function RoomsPage() {
         setErrorMessage("");
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const headers: Record<string, string> = {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {})
@@ -213,7 +213,7 @@ export default function RoomsPage() {
         if (!confirm("Are you sure you want to discharge the patient from this room/bed?")) return;
 
         try {
-            const token = localStorage.getItem("token");
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
             const res = await fetch(
