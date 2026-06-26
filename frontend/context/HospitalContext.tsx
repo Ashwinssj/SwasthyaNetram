@@ -50,6 +50,24 @@ export function HospitalProvider({ children }: { children: ReactNode }) {
     };
 
     useEffect(() => {
+        // Intercept global fetch to handle 401 Unauthorized errors (e.g. invalid/expired JWT or database resets)
+        if (typeof window !== "undefined" && !(window as any).__fetch_intercepted__) {
+            const originalFetch = window.fetch;
+            window.fetch = async function (...args) {
+                const response = await originalFetch(...args);
+                if (response.status === 401) {
+                    localStorage.removeItem("access_token");
+                    localStorage.removeItem("refresh_token");
+                    // Avoid redirect loops if already on login/signup page
+                    if (!window.location.pathname.startsWith("/login") && !window.location.pathname.startsWith("/signup")) {
+                        window.location.href = "/login";
+                    }
+                }
+                return response;
+            };
+            (window as any).__fetch_intercepted__ = true;
+        }
+
         fetchHospitals();
     }, []);
 

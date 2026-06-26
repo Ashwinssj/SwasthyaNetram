@@ -21,11 +21,13 @@ class AgentState(TypedDict):
 # 2. Define LLM and Bind Tools
 # We pass the GEMINI_API_KEY explicitly to be highly robust.
 api_key = os.getenv('GEMINI_API_KEY')
+model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-3.1-flash-lite",
+    model=model_name,
     temperature=0.2,
-    google_api_key=api_key
+    google_api_key=api_key,
+    thinking_level="minimal"
 )
 
 # List of tools available to the agent
