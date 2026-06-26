@@ -214,8 +214,8 @@ def run_prescription_ocr(prescription_id):
 
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
 
-        # Model fallback chain with retry for rate-limit errors
-        model_chain = ['gemini-2.5-flash-lite']
+        # Model fallback chain with retry for rate-limit/server errors
+        model_chain = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
         response = None
         last_error = None
 
@@ -238,9 +238,9 @@ def run_prescription_ocr(prescription_id):
                 except Exception as e:
                     last_error = e
                     err_str = str(e).lower()
-                    if "429" in err_str or "quota" in err_str or "rate" in err_str or "resource" in err_str:
-                        wait_time = (2 ** attempt) * 5  # 5s, 10s, 20s
-                        logger.warning(f"Rate limited on {model_name} (attempt {attempt+1}), retrying in {wait_time}s...")
+                    if "429" in err_str or "quota" in err_str or "rate" in err_str or "resource" in err_str or "503" in err_str or "unavailable" in err_str or "overloaded" in err_str:
+                        wait_time = (2 ** attempt) * 2  # 2s, 4s, 8s
+                        logger.warning(f"Temporary error on {model_name} (attempt {attempt+1}): {e}, retrying in {wait_time}s...")
                         time.sleep(wait_time)
                         continue
                     elif "404" in err_str or "not found" in err_str or "not supported" in err_str:
