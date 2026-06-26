@@ -27,6 +27,8 @@ export default function PatientsPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
     const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+    const [patientToDelete, setPatientToDelete] = useState<Patient | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     const fetchPatients = () => {
         if (!selectedHospitalId) return;
@@ -70,6 +72,44 @@ export default function PatientsPage() {
     const handleViewPatient = (patient: Patient) => {
         setSelectedPatient(patient);
         setIsViewModalOpen(true);
+    };
+
+    const handleDeletePatient = (patient: Patient) => {
+        setPatientToDelete(patient);
+    };
+
+    const confirmDeletePatient = async () => {
+        if (!patientToDelete) return;
+        setIsDeleting(true);
+        const token = localStorage.getItem("access_token");
+
+        try {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/${patientToDelete.id}/`, {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                }
+            });
+
+            if (res.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+
+            if (res.ok) {
+                setPatientToDelete(null);
+                fetchPatients();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert(data.detail || "Failed to delete patient");
+            }
+        } catch (err) {
+            console.error("Failed to delete patient:", err);
+            alert("An error occurred while deleting the patient.");
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     return (
@@ -166,12 +206,18 @@ export default function PatientsPage() {
                                             <td className="px-6 py-4 text-gray-500 dark:text-gray-400">
                                                 {new Date(patient.created_at).toLocaleDateString()}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 flex gap-4">
                                                 <button
                                                     onClick={() => handleViewPatient(patient)}
                                                     className="text-blue-600 hover:text-blue-700 font-medium dark:text-blue-400 dark:hover:text-blue-300"
                                                 >
                                                     View
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeletePatient(patient)}
+                                                    className="text-red-600 hover:text-red-700 font-medium dark:text-red-400 dark:hover:text-red-300"
+                                                >
+                                                    Delete
                                                 </button>
                                             </td>
                                         </tr>
@@ -195,6 +241,35 @@ export default function PatientsPage() {
                 patient={selectedPatient}
                 onRefresh={fetchPatients}
             />
+
+            {patientToDelete && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-md w-full mx-4 shadow-xl border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in-95 duration-200">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                            Remove Patient Record
+                        </h3>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                            Are you sure you want to remove <span className="font-semibold text-gray-950 dark:text-white">{patientToDelete.first_name} {patientToDelete.last_name}</span>? This will permanently delete all related medical records, SOAP notes, prescriptions, and appointments. This action cannot be undone.
+                        </p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setPatientToDelete(null)}
+                                disabled={isDeleting}
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={confirmDeletePatient}
+                                disabled={isDeleting}
+                                className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center disabled:opacity-50"
+                            >
+                                {isDeleting ? "Deleting..." : "Delete Patient"}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

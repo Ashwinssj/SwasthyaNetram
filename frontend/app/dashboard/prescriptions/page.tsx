@@ -87,6 +87,43 @@ export default function PrescriptionsPage() {
     // Accordion State for Past Prescriptions
     const [expandedPrescriptionId, setExpandedPrescriptionId] = useState<number | null>(null);
 
+    const getPrescriptionImageUrl = (imagePath: string) => {
+        if (!imagePath) return "";
+        if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
+            return imagePath;
+        }
+        const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080";
+        const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+        const normalizedPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+        return `${normalizedBaseUrl}${normalizedPath}`;
+    };
+
+    const handleDeletePrescription = async (prescriptionId: number) => {
+        if (!confirm("Are you sure you want to delete this prescription log? This will also remove all associated medicine schedule records.")) return;
+        const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+        try {
+            const res = await fetch(
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/prescriptions/${prescriptionId}/`,
+                {
+                    method: "DELETE",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            if (res.ok) {
+                // Refresh list and maintain patient selection
+                await fetchPatients(selectedPatientId);
+            } else {
+                alert("Failed to delete prescription.");
+            }
+        } catch (error) {
+            console.error("Error deleting prescription:", error);
+            alert("A network error occurred.");
+        }
+    };
+
     // Fetch Patients
     const fetchPatients = async (selectIdAfterFetch?: string) => {
         if (!selectedHospitalId) return;
@@ -689,7 +726,7 @@ export default function PrescriptionsPage() {
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {medicinesByTiming.morning.map((m) => (
-                                                            <MedicineCard key={m.id} medicine={m} colorTheme="amber" />
+                                                            <MedicineCard key={m.id} medicine={m} colorTheme="amber" onRefresh={() => fetchPatients(selectedPatientId)} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -706,7 +743,7 @@ export default function PrescriptionsPage() {
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {medicinesByTiming.afternoon.map((m) => (
-                                                            <MedicineCard key={m.id} medicine={m} colorTheme="orange" />
+                                                            <MedicineCard key={m.id} medicine={m} colorTheme="orange" onRefresh={() => fetchPatients(selectedPatientId)} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -723,7 +760,7 @@ export default function PrescriptionsPage() {
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {medicinesByTiming.night.map((m) => (
-                                                            <MedicineCard key={m.id} medicine={m} colorTheme="indigo" />
+                                                            <MedicineCard key={m.id} medicine={m} colorTheme="indigo" onRefresh={() => fetchPatients(selectedPatientId)} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -740,7 +777,7 @@ export default function PrescriptionsPage() {
                                                     </div>
                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                         {medicinesByTiming.any.map((m) => (
-                                                            <MedicineCard key={m.id} medicine={m} colorTheme="gray" />
+                                                            <MedicineCard key={m.id} medicine={m} colorTheme="gray" onRefresh={() => fetchPatients(selectedPatientId)} />
                                                         ))}
                                                     </div>
                                                 </div>
@@ -769,7 +806,7 @@ export default function PrescriptionsPage() {
                                                             return <span className="text-[10px] bg-yellow-50 text-yellow-600 dark:bg-yellow-900/20 dark:text-yellow-400 px-2 py-0.5 rounded-full font-bold flex items-center"><Loader2 className="animate-spin h-3 w-3 mr-1" />Processing</span>;
                                                         case "failed":
                                                             return <span className="text-[10px] bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 px-2 py-0.5 rounded-full font-bold flex items-center"><XCircle className="h-3 w-3 mr-1" />Failed</span>;
-                                                        default:
+                                        default:
                                                             return <span className="text-[10px] bg-gray-100 text-gray-500 dark:bg-gray-800 dark:text-gray-400 px-2 py-0.5 rounded-full font-bold">Pending</span>;
                                                     }
                                                 };
@@ -781,7 +818,7 @@ export default function PrescriptionsPage() {
                                                         >
                                                             <div className="flex items-center space-x-4">
                                                                 <img
-                                                                    src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`}
+                                                                    src={getPrescriptionImageUrl(pres.image)}
                                                                     alt="Prescription"
                                                                     className="w-12 h-12 object-cover rounded-lg border border-gray-100 dark:border-gray-800 group-hover:scale-105 transition-all"
                                                                 />
@@ -795,9 +832,20 @@ export default function PrescriptionsPage() {
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <div className="flex items-center space-x-2 text-gray-400 group-hover:text-blue-500 transition-colors">
-                                                                <span className="text-[11px] font-medium hidden sm:inline">Details</span>
-                                                                {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                            <div className="flex items-center space-x-4">
+                                                                <button
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeletePrescription(pres.id);
+                                                                    }}
+                                                                    className="text-red-500 hover:text-red-700 text-xs font-bold px-2.5 py-1 rounded-lg hover:bg-red-50 dark:hover:bg-red-950/20 transition-all cursor-pointer"
+                                                                >
+                                                                    Remove
+                                                                </button>
+                                                                <div className="flex items-center space-x-2 text-gray-400 group-hover:text-blue-500 transition-colors">
+                                                                    <span className="text-[11px] font-medium hidden sm:inline">Details</span>
+                                                                    {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                                                                </div>
                                                             </div>
                                                         </div>
 
@@ -805,9 +853,9 @@ export default function PrescriptionsPage() {
                                                             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
                                                                 <div className="space-y-3">
                                                                     <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Prescription Image</p>
-                                                                    <a href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+                                                                    <a href={getPrescriptionImageUrl(pres.image)} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
                                                                         <img
-                                                                            src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`}
+                                                                            src={getPrescriptionImageUrl(pres.image)}
                                                                             alt="Full size prescription"
                                                                             className="max-h-80 w-full object-contain mx-auto group-hover:scale-[1.02] transition-transform"
                                                                         />
@@ -903,7 +951,9 @@ export default function PrescriptionsPage() {
 }
 
 // MedicineCard Mini-Component
-function MedicineCard({ medicine, colorTheme }: { medicine: Medicine; colorTheme: "amber" | "orange" | "indigo" | "gray" }) {
+function MedicineCard({ medicine, colorTheme, onRefresh }: { medicine: Medicine; colorTheme: "amber" | "orange" | "indigo" | "gray"; onRefresh: () => void }) {
+    const [updating, setUpdating] = useState(false);
+
     const getBadgeStyle = () => {
         switch (colorTheme) {
             case "amber":
@@ -917,13 +967,56 @@ function MedicineCard({ medicine, colorTheme }: { medicine: Medicine; colorTheme
         }
     };
 
+    const handleTimingChange = async (newTiming: "morning" | "afternoon" | "night" | "any") => {
+        setUpdating(true);
+        try {
+            const token = localStorage.getItem("access_token") || localStorage.getItem("token");
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/medicines/${medicine.id}/`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ timing: newTiming }),
+            });
+            if (res.ok) {
+                onRefresh();
+            } else {
+                alert("Failed to update medicine timing.");
+            }
+        } catch (error) {
+            console.error("Error updating medicine timing:", error);
+            alert("A network error occurred.");
+        } finally {
+            setUpdating(false);
+        }
+    };
+
     return (
-        <div className="bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-850 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+        <div className={`bg-white dark:bg-gray-900 border border-gray-150 dark:border-gray-850 p-4 rounded-2xl shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4 relative ${updating ? "opacity-50 pointer-events-none" : ""}`}>
+            {updating && (
+                <div className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20 rounded-2xl z-10">
+                    <Loader2 className="animate-spin h-5 w-5 text-blue-500" />
+                </div>
+            )}
             <div className="space-y-2">
                 <div className="flex items-start justify-between">
-                    <h5 className="font-black text-sm text-gray-950 dark:text-white leading-tight">
-                        {medicine.name}
-                    </h5>
+                    <div className="space-y-1.5 max-w-[70%]">
+                        <h5 className="font-black text-sm text-gray-950 dark:text-white leading-tight">
+                            {medicine.name}
+                        </h5>
+                        <select
+                            value={medicine.timing || "any"}
+                            onChange={(e) => handleTimingChange(e.target.value as any)}
+                            disabled={updating}
+                            className="text-[10px] font-semibold py-0.5 px-2 bg-gray-50 dark:bg-gray-950 border border-gray-200 dark:border-gray-850 rounded-lg text-gray-600 dark:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer w-fit block"
+                        >
+                            <option value="morning">🌅 Morning</option>
+                            <option value="afternoon">☀️ Afternoon</option>
+                            <option value="night">🌙 Night</option>
+                            <option value="any">⏳ Any Time</option>
+                        </select>
+                    </div>
                     <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${getBadgeStyle()}`}>
                         {medicine.dosage}
                     </span>
