@@ -33,20 +33,34 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
 
             // Fetch doctors
             fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/employees/?hospital_id=${selectedHospitalId}`, { headers })
-                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = "/login";
+                        throw new Error("Unauthorized");
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (Array.isArray(data)) {
                         const doctors = data.filter((emp: any) => emp.role === 'DOCTOR');
                         setEmployees(doctors);
                     }
-                });
+                })
+                .catch(err => console.error("Error fetching doctors:", err));
 
             // Fetch patients
             fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/?hospital_id=${selectedHospitalId}`, { headers })
-                .then(res => res.json())
+                .then(res => {
+                    if (res.status === 401) {
+                        window.location.href = "/login";
+                        throw new Error("Unauthorized");
+                    }
+                    return res.json();
+                })
                 .then(data => {
                     if (Array.isArray(data)) setPatients(data);
-                });
+                })
+                .catch(err => console.error("Error fetching patients:", err));
         }
     }, [isOpen, selectedHospitalId]);
 
@@ -79,6 +93,8 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
                     reason: "",
                     status: "SCHEDULED"
                 });
+            } else if (res.status === 401) {
+                window.location.href = "/login";
             } else {
                 alert("Failed to create appointment");
             }
