@@ -8,15 +8,26 @@ from langchain_core.tools import tool
 # --- Tool Functions ---
 
 @tool
-def analyze_patient_records(query: str, hospital_id: int):
+def analyze_patient_records(query: str, hospital_id: int = None):
     """
     Use this tool to semantically search and analyze patient records based on a descriptive query.
     Examples: "Find patients with back pain", "Who are the diabetic patients?", "What are John's symptoms?"
     Args:
         query: The detailed medical or descriptive query to search for.
-        hospital_id: The ID of the hospital to search in.
+        hospital_id: The ID of the hospital to search in. (Optional)
     """
-    print(f"RAG Search Query: {query}")
+    if hospital_id is not None:
+        try:
+            hospital_id = int(hospital_id)
+        except (ValueError, TypeError):
+            hospital_id = None
+
+    if hospital_id is None:
+        from hospitals.models import Hospital
+        h = Hospital.objects.first()
+        hospital_id = h.id if h else 1
+
+    print(f"RAG Search Query: {query} for hospital_id: {hospital_id}")
     results = semantic_search_patients(query, hospital_id, limit=3)
     
     if not results:
@@ -33,14 +44,25 @@ def analyze_patient_records(query: str, hospital_id: int):
     return "\n".join(output)
 
 @tool
-def search_patients(name_query: str, hospital_id: int):
+def search_patients(name_query: str, hospital_id: int = None):
     """
     Search for patients by exact or partial name within a specific hospital. 
     Use analyze_patient_records if searching by symptoms or history.
     Args:
         name_query: The name (or partial name) to search for.
-        hospital_id: The ID of the hospital to search in.
+        hospital_id: The ID of the hospital to search in. (Optional)
     """
+    if hospital_id is not None:
+        try:
+            hospital_id = int(hospital_id)
+        except (ValueError, TypeError):
+            hospital_id = None
+
+    if hospital_id is None:
+        from hospitals.models import Hospital
+        h = Hospital.objects.first()
+        hospital_id = h.id if h else 1
+
     query = Q(first_name__icontains=name_query) | Q(last_name__icontains=name_query)
     if hospital_id:
         query &= Q(hospital_id=hospital_id)
@@ -75,6 +97,11 @@ def update_patient_medical_history(patient_id: int, new_history: str):
         new_history: The new medical history text to set.
     """
     try:
+        patient_id = int(patient_id)
+    except (ValueError, TypeError):
+        return f"Error: Invalid patient ID '{patient_id}'."
+
+    try:
         patient = Patient.objects.get(id=patient_id)
         old_history = patient.medical_history
         patient.medical_history = new_history
@@ -86,12 +113,23 @@ def update_patient_medical_history(patient_id: int, new_history: str):
         return f"Error updating patient: {str(e)}"
 
 @tool
-def get_upcoming_appointments(hospital_id: int):
+def get_upcoming_appointments(hospital_id: int = None):
     """
     Get list of upcoming appointments for the hospital.
     Args:
-        hospital_id: The ID of the current hospital context.
+        hospital_id: The ID of the current hospital context. (Optional)
     """
+    if hospital_id is not None:
+        try:
+            hospital_id = int(hospital_id)
+        except (ValueError, TypeError):
+            hospital_id = None
+
+    if hospital_id is None:
+        from hospitals.models import Hospital
+        h = Hospital.objects.first()
+        hospital_id = h.id if h else 1
+
     today = datetime.date.today()
     appts = Appointment.objects.filter(
         hospital_id=hospital_id,

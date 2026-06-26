@@ -215,7 +215,7 @@ def run_prescription_ocr(prescription_id):
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
 
         # Model fallback chain with retry for rate-limit errors
-        model_chain = ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-1.5-flash']
+        model_chain = ['gemini-2.5-flash-lite']
         response = None
         last_error = None
 
@@ -227,6 +227,11 @@ def run_prescription_ocr(prescription_id):
                     response = client.models.generate_content(
                         model=model_name,
                         contents=[prompt, image_part],
+                        config=types.GenerateContentConfig(
+                            thinking_config=types.ThinkingConfig(
+                                thinking_budget=0
+                            )
+                        )
                     )
                     last_error = None
                     break  # Success
