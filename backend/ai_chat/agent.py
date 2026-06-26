@@ -23,7 +23,7 @@ class AgentState(TypedDict):
 api_key = os.getenv('GEMINI_API_KEY')
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-1.5-flash",
+    model="gemini-3.1-flash-lite",
     temperature=0.2,
     google_api_key=api_key
 )
