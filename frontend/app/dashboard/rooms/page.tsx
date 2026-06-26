@@ -72,25 +72,21 @@ export default function RoomsPage() {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
+            const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080";
+
             // 1. Fetch Rooms
             const roomsRes = await fetch(
-                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/rooms/?hospital_id=${selectedHospitalId}`,
+                `${apiBaseUrl}/api/rooms/?hospital_id=${selectedHospitalId}`,
                 { headers }
             );
-            // Fallback to 8080 if 8888 not available (we refactored to 8080)
-            const port = "8080";
-            const roomsResActual = await fetch(
-                `http://127.0.0.1:${port}/api/rooms/?hospital_id=${selectedHospitalId}`,
-                { headers }
-            );
-            if (roomsResActual.ok) {
-                const data = await roomsResActual.json();
+            if (roomsRes.ok) {
+                const data = await roomsRes.json();
                 setRooms(data);
             }
 
             // 2. Fetch Unassigned Patients
             const patientsRes = await fetch(
-                `http://127.0.0.1:${port}/api/patients/?hospital_id=${selectedHospitalId}&unassigned_only=true`,
+                `${apiBaseUrl}/api/patients/?hospital_id=${selectedHospitalId}&unassigned_only=true`,
                 { headers }
             );
             if (patientsRes.ok) {
@@ -100,7 +96,7 @@ export default function RoomsPage() {
 
             // 3. Fetch Dashboard Stats
             const statsRes = await fetch(
-                `http://127.0.0.1:${port}/api/dashboard/stats/?hospital_id=${selectedHospitalId}`,
+                `${apiBaseUrl}/api/dashboard/stats/?hospital_id=${selectedHospitalId}`,
                 { headers }
             );
             if (statsRes.ok) {
