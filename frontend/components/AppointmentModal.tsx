@@ -29,7 +29,7 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
     useEffect(() => {
         if (isOpen && selectedHospitalId) {
             const token = localStorage.getItem("access_token");
-            const headers = { "Authorization": `Bearer ${token}` };
+            const headers: Record<string, string> = { "Authorization": `Bearer ${token}` };
 
             // Fetch doctors
             fetch(`http://127.0.0.1:8080/api/employees/?hospital_id=${selectedHospitalId}`, { headers })

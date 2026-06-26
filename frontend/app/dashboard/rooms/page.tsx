@@ -70,7 +70,7 @@ export default function RoomsPage() {
         setIsLoading(true);
         try {
             const token = localStorage.getItem("token");
-            const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+            const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
             // 1. Fetch Rooms
             const roomsRes = await fetch(
@@ -134,7 +134,7 @@ export default function RoomsPage() {
 
         try {
             const token = localStorage.getItem("token");
-            const headers = {
+            const headers: Record<string, string> = {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {})
             };
@@ -178,7 +178,7 @@ export default function RoomsPage() {
 
         try {
             const token = localStorage.getItem("token");
-            const headers = {
+            const headers: Record<string, string> = {
                 "Content-Type": "application/json",
                 ...(token ? { "Authorization": `Bearer ${token}` } : {})
             };
@@ -214,7 +214,7 @@ export default function RoomsPage() {
 
         try {
             const token = localStorage.getItem("token");
-            const headers = token ? { "Authorization": `Bearer ${token}` } : {};
+            const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
             const res = await fetch(
                 `http://127.0.0.1:8080/api/rooms/${roomId}/release_patient/`,
