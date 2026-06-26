@@ -88,7 +88,7 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
         const token = localStorage.getItem("access_token") || localStorage.getItem("token");
 
         try {
-            const res = await fetch(`http://127.0.0.1:8080/api/patients/${patient.id}/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/${patient.id}/`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -115,7 +115,7 @@ export function PatientDetailsModal({ isOpen, onClose, patient, onRefresh }: Pat
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch(`http://127.0.0.1:8080/api/patients/${patient.id}/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/${patient.id}/`, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",

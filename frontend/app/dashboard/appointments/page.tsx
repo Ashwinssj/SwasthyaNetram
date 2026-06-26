@@ -19,7 +19,7 @@ export default function AppointmentsPage() {
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch(`http://127.0.0.1:8080/api/appointments/?hospital_id=${selectedHospitalId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/appointments/?hospital_id=${selectedHospitalId}`, {
                 headers: {
                     "Authorization": `Bearer ${token}`,
                     "Content-Type": "application/json",
@@ -48,7 +48,7 @@ export default function AppointmentsPage() {
         const token = localStorage.getItem("access_token");
 
         try {
-            const res = await fetch(`http://127.0.0.1:8080/api/appointments/${id}/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/appointments/${id}/`, {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,

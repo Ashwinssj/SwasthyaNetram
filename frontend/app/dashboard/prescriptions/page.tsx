@@ -94,7 +94,7 @@ export default function PrescriptionsPage() {
         try {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const res = await fetch(
-                `http://127.0.0.1:8080/api/patients/?hospital_id=${selectedHospitalId}`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/?hospital_id=${selectedHospitalId}`,
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -160,7 +160,7 @@ export default function PrescriptionsPage() {
         setUpdatingTimings(true);
         try {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
-            const res = await fetch(`http://127.0.0.1:8080/api/patients/${selectedPatient.id}/`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/${selectedPatient.id}/`, {
                 method: "PATCH",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -238,7 +238,7 @@ export default function PrescriptionsPage() {
             await new Promise((r) => setTimeout(r, 3000)); // Wait 3 seconds between polls
             try {
                 const res = await fetch(
-                    `http://127.0.0.1:8080/api/patients/prescriptions/${prescriptionId}/ocr-status/`,
+                    `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/prescriptions/${prescriptionId}/ocr-status/`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`,
@@ -270,7 +270,7 @@ export default function PrescriptionsPage() {
         try {
             const token = localStorage.getItem("access_token") || localStorage.getItem("token");
             const res = await fetch(
-                `http://127.0.0.1:8080/api/patients/prescriptions/${prescriptionId}/retry-ocr/`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/prescriptions/${prescriptionId}/retry-ocr/`,
                 {
                     method: "POST",
                     headers: {
@@ -311,7 +311,7 @@ export default function PrescriptionsPage() {
             formData.append("patient", selectedPatientId);
             formData.append("image", uploadFile);
 
-            const res = await fetch("http://127.0.0.1:8080/api/patients/prescriptions/", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/prescriptions/`, {
                 method: "POST",
                 headers: {
                     Authorization: `Bearer ${token}`,
@@ -781,7 +781,7 @@ export default function PrescriptionsPage() {
                                                         >
                                                             <div className="flex items-center space-x-4">
                                                                 <img
-                                                                    src={`http://127.0.0.1:8080${pres.image}`}
+                                                                    src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`}
                                                                     alt="Prescription"
                                                                     className="w-12 h-12 object-cover rounded-lg border border-gray-100 dark:border-gray-800 group-hover:scale-105 transition-all"
                                                                 />
@@ -805,9 +805,9 @@ export default function PrescriptionsPage() {
                                                             <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-950 border border-gray-100 dark:border-gray-850 rounded-xl grid grid-cols-1 md:grid-cols-2 gap-6 animate-fadeIn">
                                                                 <div className="space-y-3">
                                                                     <p className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Prescription Image</p>
-                                                                    <a href={`http://127.0.0.1:8080${pres.image}`} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
+                                                                    <a href={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`} target="_blank" rel="noreferrer" className="block relative group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-800">
                                                                         <img
-                                                                            src={`http://127.0.0.1:8080${pres.image}`}
+                                                                            src={`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}${pres.image}`}
                                                                             alt="Full size prescription"
                                                                             className="max-h-80 w-full object-contain mx-auto group-hover:scale-[1.02] transition-transform"
                                                                         />

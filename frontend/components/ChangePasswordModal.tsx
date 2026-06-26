@@ -38,7 +38,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
 
         try {
             const token = localStorage.getItem("access_token");
-            const res = await fetch("http://127.0.0.1:8080/api/auth/change-password/", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/auth/change-password/`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

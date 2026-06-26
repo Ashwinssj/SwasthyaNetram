@@ -74,7 +74,7 @@ export default function RoomsPage() {
 
             // 1. Fetch Rooms
             const roomsRes = await fetch(
-                `http://127.0.0.1:8888/api/rooms/?hospital_id=${selectedHospitalId}`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/rooms/?hospital_id=${selectedHospitalId}`,
                 { headers }
             );
             // Fallback to 8080 if 8888 not available (we refactored to 8080)
@@ -139,7 +139,7 @@ export default function RoomsPage() {
                 ...(token ? { "Authorization": `Bearer ${token}` } : {})
             };
 
-            const res = await fetch("http://127.0.0.1:8080/api/rooms/", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/rooms/`, {
                 method: "POST",
                 headers,
                 body: JSON.stringify({
@@ -184,7 +184,7 @@ export default function RoomsPage() {
             };
 
             const res = await fetch(
-                `http://127.0.0.1:8080/api/rooms/${selectedRoom.id}/assign_patient/`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/rooms/${selectedRoom.id}/assign_patient/`,
                 {
                     method: "POST",
                     headers,
@@ -217,7 +217,7 @@ export default function RoomsPage() {
             const headers: Record<string, string> = token ? { "Authorization": `Bearer ${token}` } : {};
 
             const res = await fetch(
-                `http://127.0.0.1:8080/api/rooms/${roomId}/release_patient/`,
+                `${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/rooms/${roomId}/release_patient/`,
                 {
                     method: "POST",
                     headers

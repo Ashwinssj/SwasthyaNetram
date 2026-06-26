@@ -28,7 +28,7 @@ export default function EmployeesPage() {
         setLoading(true);
         const token = localStorage.getItem("access_token");
 
-        fetch(`http://127.0.0.1:8080/api/employees/?hospital_id=${selectedHospitalId}`, {
+        fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/employees/?hospital_id=${selectedHospitalId}`, {
             headers: {
                 "Authorization": `Bearer ${token}`,
                 "Content-Type": "application/json",

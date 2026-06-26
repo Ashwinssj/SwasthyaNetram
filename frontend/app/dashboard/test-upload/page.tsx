@@ -16,7 +16,7 @@ export default function TestUploadPage() {
         formData.append("file", file);
 
         try {
-            const res = await fetch("http://127.0.0.1:8080/api/patients/reports/", {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/patients/reports/`, {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`
