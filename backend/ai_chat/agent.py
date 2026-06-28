@@ -42,7 +42,7 @@ def call_model(state: AgentState):
     from users.context import get_gemini_api_key
     
     api_key = get_gemini_api_key()
-    model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash-lite')
+    model_name = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
     
     llm = ChatGoogleGenerativeAI(
         model=model_name,
@@ -62,6 +62,22 @@ def call_model(state: AgentState):
         "Use 'analyze_patient_records' to find patients by symptoms, medical history, or descriptions (Semantic Search).\n"
         "Use 'search_patients' to find patients by exact name before updating.\n"
         "ALWAYS confirm with the user before finalizing an update if unsure.\n"
+        "When presenting a patient profile, list of doctors, or appointment booking confirmations, ALWAYS output structural blocks so the frontend renders them as beautiful cards. Format them as follows:\n\n"
+        "For Patients:\n"
+        "Patient ID: [ID]\n"
+        "Name: [First Name] [Last Name]\n"
+        "Gender: [Male/Female]\n"
+        "DOB: [YYYY-MM-DD]\n"
+        "Phone: [Contact Number]\n"
+        "Medical History: [History summary]\n\n"
+        "For Appointment confirmations:\n"
+        "Successfully booked appointment\n"
+        "Appointment ID: [ID]\n"
+        "Patient: [Name]\n"
+        "Doctor: [Doctor Name]\n"
+        "Date: [YYYY-MM-DD]\n"
+        "Time: [HH:MM]\n\n"
+        "Use Markdown **bolding** for emphasizing labels.\n"
         f"Current Hospital ID context: {hospital_id}\n"
     )
     

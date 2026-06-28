@@ -19,6 +19,114 @@ interface ChatSession {
     first_message: string;
 }
 
+// Helper to parse and render styled cards or custom elements in chatbot responses
+function FormattedMessage({ content }: { content: string }) {
+    // 1. Detect if it contains Patient Details (e.g. Patient ID, Name, Gender, etc.)
+    if (content.includes("Patient ID:") || content.includes("Successfully created patient") || (content.includes("Patient:") && content.includes("Gender:"))) {
+        const idMatch = content.match(/(?:Patient ID|ID):\s*\*?#?(\d+)/i);
+        const nameMatch = content.match(/(?:Name):\s*\*?\*?([^*\n-]+)/i);
+        const genderMatch = content.match(/(?:Gender):\s*\*?\*?([^*\n|-]+)/i);
+        const dobMatch = content.match(/(?:DOB|Date of Birth):\s*\*?\*?([^*\n|-]+)/i);
+        const phoneMatch = content.match(/(?:Phone|Contact):\s*\*?\*?([^*\n|-]+)/i);
+        const historyMatch = content.match(/(?:Medical History|Symptoms|History):\s*\*?\*?([^\n]+)/i);
+
+        const nameVal = nameMatch ? nameMatch[1].trim() : "";
+        const idVal = idMatch ? idMatch[1].trim() : "";
+
+        if (nameVal || idVal) {
+            return (
+                <div className="my-2 overflow-hidden rounded-xl border border-emerald-100 bg-emerald-50/30 p-4 shadow-sm dark:border-emerald-950/20 dark:bg-emerald-950/10">
+                    <div className="flex items-center gap-2 pb-2 border-b border-emerald-100/60 dark:border-emerald-950/20">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">📋 Patient Card</span>
+                    </div>
+                    <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+                        {nameVal && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Name:</span> {nameVal}</div>}
+                        {idVal && <div><span className="font-semibold text-gray-500 dark:text-gray-400">ID:</span> #{idVal}</div>}
+                        {genderMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Gender:</span> {genderMatch[1].trim()}</div>}
+                        {dobMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">DOB:</span> {dobMatch[1].trim()}</div>}
+                        {phoneMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Phone:</span> {phoneMatch[1].trim()}</div>}
+                    </div>
+                    {historyMatch && (
+                        <div className="mt-2.5 border-t border-emerald-100/40 pt-2 text-sm dark:border-emerald-950/10">
+                            <span className="font-semibold text-gray-500 dark:text-gray-400">Medical Notes:</span>
+                            <p className="mt-0.5 text-gray-600 dark:text-gray-300 italic">{historyMatch[1].trim()}</p>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+    }
+
+    // 2. Detect if it contains Appointment Confirmation details
+    if (content.includes("Successfully booked appointment") || content.includes("appointment (ID:") || (content.includes("Appointment ID:") && content.includes("Doctor:"))) {
+        const idMatch = content.match(/(?:Appointment ID|ID):\s*\*?#?(\d+)/i);
+        const doctorMatch = content.match(/(?:Doctor):\s*\*?\*?([^*\n,-]+)/i) || content.match(/with Dr\.\s*\*?\*?([^*\n,-]+)/i);
+        const dateMatch = content.match(/(?:Date):\s*\*?\*?([^*\n,-]+)/i) || content.match(/on\s*\*?\*?(\d{4}-\d{2}-\d{2})/i);
+        const timeMatch = content.match(/(?:Time):\s*\*?\*?([^*\n\s-]+)/i) || content.match(/at\s*\*?\*?(\d{2}:\d{2})/i);
+        const patientMatch = content.match(/(?:Patient):\s*\*?\*?([^*\n,-]+)/i) || content.match(/for\s*\*?\*?([^*\n,-]+)/i);
+
+        const doctorVal = doctorMatch ? doctorMatch[1].trim() : "";
+        const dateVal = dateMatch ? dateMatch[1].trim() : "";
+
+        if (doctorVal || dateVal) {
+            return (
+                <div className="my-2 overflow-hidden rounded-xl border border-blue-100 bg-blue-50/30 p-4 shadow-sm dark:border-blue-950/20 dark:bg-blue-950/10">
+                    <div className="flex items-center gap-2 pb-2 border-b border-blue-100/60 dark:border-blue-950/20">
+                        <span className="text-blue-600 dark:text-blue-400 font-bold">📅 Appointment Confirmation</span>
+                    </div>
+                    <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 text-sm text-gray-700 dark:text-gray-300">
+                        {idMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Appt ID:</span> #{idMatch[1].trim()}</div>}
+                        {patientMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Patient:</span> {patientMatch[1].trim()}</div>}
+                        {doctorVal && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Doctor:</span> Dr. {doctorVal}</div>}
+                        {dateVal && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Date:</span> {dateVal}</div>}
+                        {timeMatch && <div><span className="font-semibold text-gray-500 dark:text-gray-400">Time:</span> {timeMatch[1].trim()}</div>}
+                        <div><span className="font-semibold text-gray-500 dark:text-gray-400">Status:</span> <span className="ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-300">Confirmed</span></div>
+                    </div>
+                </div>
+            );
+        }
+    }
+
+    // 3. Fallback: Parse basic markdown lines
+    const lines = content.split('\n');
+    return (
+        <div className="space-y-1 text-[15px] leading-relaxed">
+            {lines.map((line, idx) => {
+                const trimmed = line.trim();
+                if (!trimmed) return <div key={idx} className="h-2" />;
+                
+                // Match lists
+                if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
+                    const contentVal = trimmed.substring(2);
+                    return (
+                        <ul key={idx} className="list-disc list-inside ml-4 my-0.5">
+                            <li>{parseBoldText(contentVal)}</li>
+                        </ul>
+                    );
+                }
+                
+                // Match headers
+                if (trimmed.startsWith('### ')) {
+                    return <h4 key={idx} className="font-semibold text-base mt-2 mb-0.5 text-gray-900 dark:text-white">{parseBoldText(trimmed.substring(4))}</h4>;
+                }
+                if (trimmed.startsWith('## ')) {
+                    return <h3 key={idx} className="font-bold text-lg mt-3 mb-1 text-gray-900 dark:text-white">{parseBoldText(trimmed.substring(3))}</h3>;
+                }
+                
+                return <p key={idx} className="my-0.5">{parseBoldText(line)}</p>;
+            })}
+        </div>
+    );
+}
+
+// Utility to render **bold** text in JSX
+function parseBoldText(text: string) {
+    const parts = text.split(/\*\*([^*]+)\*\*/g);
+    return parts.map((part, index) => {
+        return index % 2 === 1 ? <strong key={index} className="font-semibold text-gray-900 dark:text-white">{part}</strong> : part;
+    });
+}
+
 export default function AIAssistantPage() {
     const { selectedHospitalId } = useHospital();
 
@@ -342,9 +450,13 @@ export default function AIAssistantPage() {
                                             : "bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100"
                                             }`}
                                     >
-                                        <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
-                                            {msg.content}
-                                        </p>
+                                        {msg.role === "user" ? (
+                                            <p className="whitespace-pre-wrap text-[15px] leading-relaxed">
+                                                {msg.content}
+                                            </p>
+                                        ) : (
+                                            <FormattedMessage content={msg.content} />
+                                        )}
                                     </div>
                                 </div>
                             ))

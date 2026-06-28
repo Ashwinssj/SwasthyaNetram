@@ -218,7 +218,7 @@ def run_prescription_ocr(prescription_id, api_key=None):
         image_part = types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
 
         # Model fallback chain with retry for rate-limit/server errors
-        model_chain = ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash']
+        model_chain = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash']
         response = None
         last_error = None
 
