@@ -46,8 +46,10 @@ class ChatView(APIView):
         # 2. Save User Message
         ChatMessage.objects.create(session=session, role='user', content=user_message)
 
-        ai_response_text = "I'm having trouble thinking right now."
-        api_key = os.getenv('GEMINI_API_KEY')
+        # Retrieve request-scoped API key from contextvars
+        from users.context import gemini_api_key_var
+        scoped_key = gemini_api_key_var.get()
+        api_key = scoped_key or os.getenv('GEMINI_API_KEY')
 
         if api_key:
             try:
@@ -70,12 +72,16 @@ class ChatView(APIView):
                 # Retrieve the terminal agent message content
                 ai_response_text = result["messages"][-1].content
                 
+                # Safeguard against empty model generations (safety blocks or rate-limiting thresholds)
+                if not ai_response_text.strip():
+                    ai_response_text = "I'm sorry, I received an empty response from the AI model. This usually happens when the API key rate limits are exceeded or the service is temporarily overloaded. Please wait a moment and try again."
+                
             except Exception as e:
                 error_msg = f"AI Graph Error: {str(e)}"
                 print(error_msg)
                 ai_response_text = f"I encountered an error: {str(e)}"
         else:
-            ai_response_text = "AI API Key is missing. Please configure GEMINI_API_KEY in your .env file."
+            ai_response_text = "AI API Key is missing. Please configure GEMINI_API_KEY in your .env file or settings page."
 
         # 3. Save AI Message
         ChatMessage.objects.create(session=session, role='assistant', content=ai_response_text)
