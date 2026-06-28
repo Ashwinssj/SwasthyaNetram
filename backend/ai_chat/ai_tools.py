@@ -1,10 +1,46 @@
 from patients.models import Patient
-from appointments.models import Appointment
+from appointments.models import Appointment, DoctorTimeslot
 from employees.models import Employee
 from .rag_utils import semantic_search_patients
 from django.db.models import Q
 import datetime
 from langchain_core.tools import tool
+
+def parse_date_flexible(date_str: str) -> datetime.date:
+    clean_str = date_str.strip().lower()
+    
+    # 1. Handle relative date keywords
+    if clean_str in ("today", "todays"):
+        return datetime.date.today()
+    elif clean_str in ("tomorrow", "tomorrows"):
+        return datetime.date.today() + datetime.timedelta(days=1)
+    elif clean_str in ("day after tomorrow", "day-after-tomorrow"):
+        return datetime.date.today() + datetime.timedelta(days=2)
+    elif clean_str in ("yesterday", "yesterdays"):
+        return datetime.date.today() - datetime.timedelta(days=1)
+        
+    # 2. Try parsing various date formats
+    formats = [
+        "%Y-%m-%d",  # 2026-06-29
+        "%d/%m/%Y",  # 29/06/2026
+        "%d-%m-%Y",  # 29-06-2026
+        "%m/%d/%Y",  # 06/29/2026
+        "%Y/%m/%d",  # 2026/06/29
+        "%d %B %Y",  # 29 June 2026
+        "%d %b %Y",  # 29 Jun 2026
+        "%B %d, %Y", # June 29, 2026
+        "%b %d, %Y", # Jun 29, 2026
+        "%Y-%m-%d %H:%M:%S", # Full timestamp
+        "%Y-%m-%dT%H:%M:%S", # ISO timestamp
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.datetime.strptime(date_str.strip(), fmt).date()
+        except ValueError:
+            continue
+            
+    raise ValueError(f"Could not parse date: '{date_str}'")
 
 # --- Tool Functions ---
 
@@ -415,9 +451,9 @@ def book_appointment(
 
     # Parse date
     try:
-        appt_date = datetime.datetime.strptime(appointment_date.strip(), "%Y-%m-%d").date()
-    except ValueError:
-        return "Error: appointment_date must be in YYYY-MM-DD format."
+        appt_date = parse_date_flexible(appointment_date)
+    except ValueError as e:
+        return f"Error: {str(e)}"
 
     # Parse time
     appt_time = None
@@ -452,7 +488,7 @@ def book_appointment(
             reason=reason.strip() if reason else "",
             status='SCHEDULED'
         )
-        return f"Successfully booked appointment (ID: {appointment.id}) for {patient.first_name} {patient.last_name} with Dr. {doctor.first_name} {doctor.last_name} on {appointment_date} at {appointment_time}."
+        return f"Successfully booked appointment (ID: {appointment.id}) for {patient.first_name} {patient.last_name} with Dr. {doctor.first_name} {doctor.last_name} on {appt_date.strftime('%Y-%m-%d')} at {appointment_time}."
     except Exception as e:
         return f"Error booking appointment: {str(e)}"
 
@@ -471,10 +507,10 @@ def get_doctor_timeslots(doctor_id: int, date_str: str):
         return "Error: Invalid doctor ID."
 
     try:
-        dt = datetime.datetime.strptime(date_str.strip(), "%Y-%m-%d")
+        dt = parse_date_flexible(date_str)
         day_of_week = dt.strftime("%A").upper()
-    except ValueError:
-        return "Error: date_str must be in YYYY-MM-DD format."
+    except ValueError as e:
+        return f"Error: {str(e)}"
 
     try:
         doctor = Employee.objects.get(id=doctor_id, role='DOCTOR', is_active=True)
@@ -488,7 +524,7 @@ def get_doctor_timeslots(doctor_id: int, date_str: str):
     from appointments.models import Appointment
     booked_appointments = Appointment.objects.filter(
         doctor=doctor,
-        appointment_date=dt.date(),
+        appointment_date=dt,
         status='SCHEDULED'
     )
     booked_times = {app.appointment_time.strftime("%H:%M") for app in booked_appointments}
@@ -508,7 +544,7 @@ def get_doctor_timeslots(doctor_id: int, date_str: str):
         
     return {
         "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}",
-        "date": date_str,
+        "date": dt.strftime("%Y-%m-%d"),
         "day_of_week": day_of_week.capitalize(),
         "timeslots": results
     }
