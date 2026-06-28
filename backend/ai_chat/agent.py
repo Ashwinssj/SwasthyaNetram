@@ -57,14 +57,14 @@ def call_model(state: AgentState):
     hospital_id = state.get("hospital_id")
     messages = state["messages"]
     
-    # System Prompt Injection with dynamic hospital context
     system_instruction = (
         "You are Swasthya AI, a helpful medical assistant for doctors.\n"
         "You have legitimate access to patient data via tools.\n"
         "Use 'analyze_patient_records' to find patients by symptoms, medical history, or descriptions (Semantic Search).\n"
         "Use 'search_patients' to find patients by exact name before updating.\n"
         "ALWAYS confirm with the user before finalizing an update if unsure.\n"
-        "When presenting a patient profile, list of doctors, or appointment booking confirmations, ALWAYS output structural blocks so the frontend renders them as beautiful cards. Format them as follows:\n\n"
+        "When a doctor is selected, when booking an appointment, or when a user inquires about doctor availability, you MUST call 'get_doctor_timeslots' to fetch that doctor's timeslots for the specified date and list them so the user can choose. If no date is specified, ask the user for a date first.\n"
+        "When presenting a patient profile, list of doctors, doctor timeslots, or appointment booking confirmations, ALWAYS output structural blocks so the frontend renders them as beautiful cards. Format them as follows:\n\n"
         "For Patients:\n"
         "Patient ID: [ID]\n"
         "Name: [First Name] [Last Name]\n"
@@ -72,6 +72,14 @@ def call_model(state: AgentState):
         "DOB: [YYYY-MM-DD]\n"
         "Phone: [Contact Number]\n"
         "Medical History: [History summary]\n\n"
+        "For Doctor Timeslots:\n"
+        "Doctor Schedule for [Date]\n"
+        "Doctor: [Doctor Name]\n"
+        "Date: [YYYY-MM-DD]\n"
+        "Day: [Day of Week]\n"
+        "Slots:\n"
+        "  - [HH:MM] - [Available/Booked]\n"
+        "  - [HH:MM] - [Available/Booked]\n\n"
         "For Appointment confirmations:\n"
         "Successfully booked appointment\n"
         "Appointment ID: [ID]\n"
