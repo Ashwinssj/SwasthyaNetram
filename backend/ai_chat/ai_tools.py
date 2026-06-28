@@ -69,7 +69,14 @@ def search_patients(name_query: str, hospital_id: int = None):
         patient_id = int(name_query.strip())
         query = Q(id=patient_id)
     except ValueError:
-        query = Q(first_name__icontains=name_query) | Q(last_name__icontains=name_query)
+        name_parts = name_query.strip().split()
+        if len(name_parts) == 1:
+            query = Q(first_name__icontains=name_parts[0]) | Q(last_name__icontains=name_parts[0])
+        else:
+            q_parts = Q()
+            for part in name_parts:
+                q_parts &= (Q(first_name__icontains=part) | Q(last_name__icontains=part))
+            query = q_parts
 
     if hospital_id:
         query &= Q(hospital_id=hospital_id)
@@ -218,6 +225,100 @@ def create_patient(
         return f"Error creating patient: {str(e)}"
 
 @tool
+def update_patient(
+    patient_id: int,
+    first_name: str = None,
+    last_name: str = None,
+    date_of_birth: str = None,
+    gender: str = None,
+    blood_group: str = None,
+    contact_number: str = None,
+    address: str = None,
+    symptoms: str = None,
+    medical_history: str = None
+):
+    """
+    Update details for an existing patient record.
+    Args:
+        patient_id: The unique ID of the patient to update.
+        first_name: Patient's first name. (Optional)
+        last_name: Patient's last name. (Optional)
+        date_of_birth: Patient's DOB (YYYY-MM-DD format). (Optional)
+        gender: Gender ('M' for Male, 'F' for Female, 'O' for Other). (Optional)
+        blood_group: Blood group (e.g. 'A+', 'O-'). (Optional)
+        contact_number: Contact number. (Optional)
+        address: Complete address. (Optional)
+        symptoms: Current symptoms. (Optional)
+        medical_history: Past medical history. (Optional)
+    """
+    try:
+        patient = Patient.objects.get(id=int(patient_id))
+    except Patient.DoesNotExist:
+        return f"Error: Patient with ID {patient_id} not found."
+    except (ValueError, TypeError):
+        return f"Error: Invalid patient ID '{patient_id}'."
+
+    updates = []
+    
+    if first_name is not None:
+        patient.first_name = first_name.strip()
+        updates.append("first_name")
+    if last_name is not None:
+        patient.last_name = last_name.strip()
+        updates.append("last_name")
+        
+    if date_of_birth is not None:
+        import datetime
+        try:
+            patient.date_of_birth = datetime.datetime.strptime(date_of_birth.strip(), "%Y-%m-%d").date()
+            updates.append("date_of_birth")
+        except ValueError:
+            return "Error: date_of_birth must be in YYYY-MM-DD format."
+            
+    if gender is not None:
+        gender_val = gender.strip().upper()
+        if gender_val.startswith('M'):
+            patient.gender = 'M'
+        elif gender_val.startswith('F'):
+            patient.gender = 'F'
+        else:
+            patient.gender = 'O'
+        updates.append("gender")
+        
+    if blood_group is not None:
+        patient.blood_group = blood_group.strip()
+        updates.append("blood_group")
+        
+    if contact_number is not None:
+        patient.contact_number = contact_number.strip()
+        updates.append("contact_number")
+        
+    if address is not None:
+        patient.address = address.strip()
+        updates.append("address")
+        
+    if symptoms is not None:
+        patient.symptoms = symptoms.strip()
+        updates.append("symptoms")
+        
+    if medical_history is not None:
+        patient.medical_history = medical_history.strip()
+        updates.append("medical_history")
+
+    if not updates:
+        return "No fields provided to update."
+
+    try:
+        patient.save()
+        if any(f in updates for f in ["first_name", "last_name", "symptoms", "medical_history", "address"]):
+            patient.embedding_json = None
+            patient.save(update_fields=["embedding_json"])
+            
+        return f"Successfully updated patient {patient.first_name} {patient.last_name} (ID: {patient.id}) fields: {', '.join(updates)}."
+    except Exception as e:
+        return f"Error updating patient: {str(e)}"
+
+@tool
 def search_doctors(name_query: str = "", hospital_id: int = None):
     """
     Search for doctors by name or list all available doctors in a hospital.
@@ -340,6 +441,7 @@ available_tools = {
     'update_patient_medical_history': update_patient_medical_history,
     'get_upcoming_appointments': get_upcoming_appointments,
     'create_patient': create_patient,
+    'update_patient': update_patient,
     'search_doctors': search_doctors,
     'book_appointment': book_appointment
 }

@@ -12,6 +12,7 @@ from .ai_tools import (
     update_patient_medical_history,
     get_upcoming_appointments,
     create_patient,
+    update_patient,
     search_doctors,
     book_appointment
 )
@@ -29,6 +30,7 @@ tools = [
     update_patient_medical_history,
     get_upcoming_appointments,
     create_patient,
+    update_patient,
     search_doctors,
     book_appointment
 ]
