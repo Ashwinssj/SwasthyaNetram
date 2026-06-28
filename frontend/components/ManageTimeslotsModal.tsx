@@ -36,6 +36,8 @@ export function ManageTimeslotsModal({ isOpen, onClose, doctor }: ManageTimeslot
     });
 
     const dayNames: Record<string, string> = {
+        ALL_DAYS: "All Days (Mon-Sun)",
+        WEEKDAYS: "Weekdays (Mon-Fri)",
         MONDAY: "Monday",
         TUESDAY: "Tuesday",
         WEDNESDAY: "Wednesday",
@@ -86,23 +88,37 @@ export function ManageTimeslotsModal({ isOpen, onClose, doctor }: ManageTimeslot
         const start_time = formData.start_time.length === 5 ? `${formData.start_time}:00` : formData.start_time;
         const end_time = formData.end_time.length === 5 ? `${formData.end_time}:00` : formData.end_time;
 
-        try {
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/appointments/timeslots/`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    doctor: doctor.id,
-                    day_of_week: formData.day_of_week,
-                    start_time,
-                    end_time,
-                    is_active: true
-                })
-            });
+        const daysToCreate: string[] = [];
+        if (formData.day_of_week === "ALL_DAYS") {
+            daysToCreate.push("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY");
+        } else if (formData.day_of_week === "WEEKDAYS") {
+            daysToCreate.push("MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY");
+        } else {
+            daysToCreate.push(formData.day_of_week);
+        }
 
-            if (res.ok) {
+        try {
+            const promises = daysToCreate.map(day =>
+                fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/appointments/timeslots/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        doctor: doctor.id,
+                        day_of_week: day,
+                        start_time,
+                        end_time,
+                        is_active: true
+                    })
+                })
+            );
+
+            const responses = await Promise.all(promises);
+            const succeeded = responses.some(res => res.ok);
+
+            if (succeeded) {
                 fetchTimeslots();
                 setFormData({
                     ...formData,
@@ -110,8 +126,8 @@ export function ManageTimeslotsModal({ isOpen, onClose, doctor }: ManageTimeslot
                     end_time: "09:30"
                 });
             } else {
-                const data = await res.json();
-                alert(data.non_field_errors || "This timeslot already exists.");
+                const firstData = await responses[0].json();
+                alert(firstData.non_field_errors || "This timeslot already exists.");
             }
         } catch (error) {
             console.error("Error adding timeslot:", error);
