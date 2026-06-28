@@ -35,6 +35,7 @@ class ChangePasswordView(generics.UpdateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 from rest_framework.views import APIView
+from .models import UserProfile
 
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -42,6 +43,9 @@ class UserProfileView(APIView):
     def get(self, request):
         user = request.user
         is_admin = user.is_superuser
+        
+        # Lazy-create profile if missing
+        profile, _ = UserProfile.objects.get_or_create(user=user)
         
         role = "Hospital User"
         plan = "Standard Access"
@@ -59,5 +63,22 @@ class UserProfileView(APIView):
             "is_superuser": user.is_superuser,
             "role": role,
             "plan": plan,
-            "ai_plan": ai_plan
+            "ai_plan": ai_plan,
+            "gemini_api_key": profile.gemini_api_key or ""
         })
+
+    def put(self, request):
+        user = request.user
+        profile, _ = UserProfile.objects.get_or_create(user=user)
+        
+        gemini_api_key = request.data.get('gemini_api_key')
+        if gemini_api_key is not None:
+            profile.gemini_api_key = gemini_api_key.strip()
+            profile.save()
+            
+        return Response({
+            "status": "success",
+            "message": "Gemini API key updated successfully",
+            "gemini_api_key": profile.gemini_api_key or ""
+        })
+

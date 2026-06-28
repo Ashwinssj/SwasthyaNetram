@@ -146,7 +146,7 @@ import time
 
 logger = logging.getLogger(__name__)
 
-def run_prescription_ocr(prescription_id):
+def run_prescription_ocr(prescription_id, api_key=None):
     """
     Core OCR extraction logic using the new google.genai SDK.
     Includes retry with exponential backoff for rate-limit (429) errors.
@@ -159,11 +159,14 @@ def run_prescription_ocr(prescription_id):
     except Prescription.DoesNotExist:
         return False, "Prescription not found."
 
-    api_key = os.getenv('GEMINI_API_KEY')
+    if not api_key:
+        from users.context import get_gemini_api_key
+        api_key = get_gemini_api_key()
+
     if not api_key:
         Prescription.objects.filter(pk=prescription_id).update(
             ocr_status='failed',
-            ocr_error='No GEMINI_API_KEY configured in server environment.'
+            ocr_error='No GEMINI_API_KEY configured in server environment or user profile.'
         )
         return False, "No GEMINI_API_KEY configured."
 
@@ -336,7 +339,9 @@ def extract_prescription_medicines(sender, instance, created, **kwargs):
     """Trigger OCR extraction when a new prescription is created."""
     if created and instance.image:
         import threading
+        from users.context import gemini_api_key_var
+        api_key = gemini_api_key_var.get()
         # Run in a background thread so the HTTP response isn't blocked
-        thread = threading.Thread(target=run_prescription_ocr, args=(instance.pk,))
+        thread = threading.Thread(target=run_prescription_ocr, args=(instance.pk, api_key))
         thread.daemon = True
         thread.start()

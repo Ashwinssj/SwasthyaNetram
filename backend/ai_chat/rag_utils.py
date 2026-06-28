@@ -1,16 +1,11 @@
 import json
 import numpy as np
-import google.generativeai as genai
 import os
 from patients.models import Patient
 import logging
+from users.context import get_gemini_api_key
 
 logger = logging.getLogger(__name__)
-
-# Configure Gemini
-GENAI_API_KEY = os.getenv('GEMINI_API_KEY')
-if GENAI_API_KEY:
-    genai.configure(api_key=GENAI_API_KEY)
 
 def get_patient_text(patient: Patient) -> str:
     """Combines patient details into a cohesive chunk of text for embedding."""
@@ -53,18 +48,25 @@ def get_patient_text(patient: Patient) -> str:
 
 def embed_text(text: str) -> list[float]:
     """Calls Gemini API to get the embedding vector for the text."""
-    if not GENAI_API_KEY:
-        logger.warning("No GEMINI_API_KEY found. Cannot generate embeddings.")
+    api_key = get_gemini_api_key()
+    if not api_key:
+        logger.warning("No Gemini API Key found. Cannot generate embeddings.")
         return []
         
     try:
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=api_key)
         # Using text-embedding-004 which is the latest embedding model
-        result = genai.embed_content(
-            model="models/text-embedding-004",
-            content=text,
-            task_type="retrieval_document",
+        result = client.models.embed_content(
+            model="text-embedding-004",
+            contents=text,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT"
+            )
         )
-        return result['embedding']
+        return result.embeddings[0].values
     except Exception as e:
         logger.error(f"Error generating embedding: {e}")
         return []
@@ -103,16 +105,25 @@ def semantic_search_patients(query: str, hospital_id: int, limit: int = 3):
     """
     Finds the most semantically similar patients to the query in the given hospital.
     """
-    if not GENAI_API_KEY:
+    api_key = get_gemini_api_key()
+    if not api_key:
+        logger.warning("No Gemini API key found. Cannot run semantic search.")
         return []
 
     # 1. Embed the query
     try:
-        query_embedding = genai.embed_content(
-            model="models/text-embedding-004",
-            content=query,
-            task_type="retrieval_query",
-        )['embedding']
+        from google import genai
+        from google.genai import types
+        
+        client = genai.Client(api_key=api_key)
+        result = client.models.embed_content(
+            model="text-embedding-004",
+            contents=query,
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY"
+            )
+        )
+        query_embedding = result.embeddings[0].values
     except Exception as e:
         logger.error(f"Error embedding query: {e}")
         return []

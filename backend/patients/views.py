@@ -80,13 +80,17 @@ class PrescriptionViewSet(viewsets.ModelViewSet):
             )
         
         from .models import run_prescription_ocr
+        from users.context import gemini_api_key_var
         import threading
         
         # Reset status
         Prescription.objects.filter(pk=prescription.pk).update(ocr_status='processing', ocr_error=None)
         
+        # Capture API key context
+        api_key = gemini_api_key_var.get()
+        
         # Run in background thread
-        thread = threading.Thread(target=run_prescription_ocr, args=(prescription.pk,))
+        thread = threading.Thread(target=run_prescription_ocr, args=(prescription.pk, api_key))
         thread.daemon = True
         thread.start()
         
