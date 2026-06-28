@@ -14,7 +14,8 @@ from .ai_tools import (
     create_patient,
     update_patient,
     search_doctors,
-    book_appointment
+    book_appointment,
+    get_doctor_timeslots
 )
 
 # 1. Define Agent State
@@ -32,7 +33,8 @@ tools = [
     create_patient,
     update_patient,
     search_doctors,
-    book_appointment
+    book_appointment,
+    get_doctor_timeslots
 ]
 
 # 3. Define the Nodes

@@ -25,3 +25,28 @@ class Appointment(models.Model):
 
     class Meta:
         ordering = ['appointment_date', 'appointment_time']
+
+
+class DoctorTimeslot(models.Model):
+    DAY_CHOICES = [
+        ('MONDAY', 'Monday'),
+        ('TUESDAY', 'Tuesday'),
+        ('WEDNESDAY', 'Wednesday'),
+        ('THURSDAY', 'Thursday'),
+        ('FRIDAY', 'Friday'),
+        ('SATURDAY', 'Saturday'),
+        ('SUNDAY', 'Sunday'),
+    ]
+
+    doctor = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='timeslots', limit_choices_to={'role': 'DOCTOR'})
+    day_of_week = models.CharField(max_length=15, choices=DAY_CHOICES)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['day_of_week', 'start_time']
+        unique_together = ('doctor', 'day_of_week', 'start_time')
+
+    def __str__(self):
+        return f"Dr. {self.doctor.first_name} {self.doctor.last_name} - {self.day_of_week} ({self.start_time} - {self.end_time})"

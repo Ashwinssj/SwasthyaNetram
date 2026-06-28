@@ -16,6 +16,8 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
     const [loading, setLoading] = useState(false);
     const [employees, setEmployees] = useState<any[]>([]);
     const [patients, setPatients] = useState<any[]>([]);
+    const [availableSlots, setAvailableSlots] = useState<any[]>([]);
+    const [slotsLoading, setSlotsLoading] = useState(false);
 
     const [formData, setFormData] = useState({
         doctor: "",
@@ -25,6 +27,31 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
         reason: "",
         status: "SCHEDULED"
     });
+
+    useEffect(() => {
+        if (formData.doctor && formData.appointment_date) {
+            setSlotsLoading(true);
+            const token = localStorage.getItem("access_token");
+            fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || "http://127.0.0.1:8080"}/api/appointments/available_slots/?doctor_id=${formData.doctor}&date=${formData.appointment_date}`, {
+                headers: { "Authorization": `Bearer ${token}` }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (Array.isArray(data)) {
+                        setAvailableSlots(data);
+                    } else {
+                        setAvailableSlots([]);
+                    }
+                })
+                .catch(err => {
+                    console.error("Error fetching available slots:", err);
+                    setAvailableSlots([]);
+                })
+                .finally(() => setSlotsLoading(false));
+        } else {
+            setAvailableSlots([]);
+        }
+    }, [formData.doctor, formData.appointment_date]);
 
     useEffect(() => {
         if (isOpen && selectedHospitalId) {
@@ -189,13 +216,40 @@ export function AppointmentModal({ isOpen, onClose, onSuccess }: AppointmentModa
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Time</label>
-                                        <input
-                                            type="time"
-                                            required
-                                            className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
-                                            value={formData.appointment_time}
-                                            onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
-                                        />
+                                        {slotsLoading ? (
+                                            <div className="mt-1 text-sm text-gray-500 py-2">Loading slots...</div>
+                                        ) : availableSlots.length > 0 ? (
+                                            <select
+                                                required
+                                                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800 bg-white"
+                                                value={formData.appointment_time}
+                                                onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
+                                            >
+                                                <option value="">Select Timeslot</option>
+                                                {availableSlots.map((slot, sIdx) => (
+                                                    <option 
+                                                        key={sIdx} 
+                                                        value={slot.start_time} 
+                                                        disabled={slot.is_booked}
+                                                    >
+                                                        {slot.start_time} - {slot.end_time} {slot.is_booked ? "(Booked)" : ""}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <>
+                                                <input
+                                                    type="time"
+                                                    required
+                                                    className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 dark:border-gray-700 dark:bg-gray-800"
+                                                    value={formData.appointment_time}
+                                                    onChange={(e) => setFormData({ ...formData, appointment_time: e.target.value })}
+                                                />
+                                                {formData.doctor && formData.appointment_date && (
+                                                    <span className="text-[10px] text-gray-500 block mt-1">No timeslots configured. Entered manually.</span>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </div>
 

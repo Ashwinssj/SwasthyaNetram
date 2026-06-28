@@ -87,7 +87,62 @@ function FormattedMessage({ content }: { content: string }) {
         }
     }
 
-    // 3. Fallback: Parse basic markdown lines
+    // 3. Detect if it contains Doctor Schedule/Timeslots details
+    if (content.includes("Doctor Schedule") || content.includes("timeslots configured") || (content.includes("Slots:") && (content.includes("Available") || content.includes("Booked")))) {
+        const docMatch = content.match(/(?:Dr\.|Doctor):\s*\*?\*?([^*\n-]+)/i);
+        const dateMatch = content.match(/(?:Date):\s*\*?\*?([^*\n\s]+)/i) || content.match(/Schedule for\s*\*?\*?(\d{4}-\d{2}-\d{2})/i);
+        const dayMatch = content.match(/(?:Day|Day of week):\s*\*?\*?([^*\n\s]+)/i);
+        
+        // Extract individual slot lines e.g. " - 10:30 - Available" or " - 10:30 (Available)" or " - 10:30: Booked"
+        const slotRegex = /(?:-\s*\*?|\b)(\d{2}:\d{2})(?:\s*-\s*|\s*:\s*|\s*\()\*?(Available|Booked)\*?\)?/gi;
+        const slots: Array<{ time: string; status: string }> = [];
+        let match;
+        while ((match = slotRegex.exec(content)) !== null) {
+            slots.push({ time: match[1], status: match[2] });
+        }
+
+        const docName = docMatch ? docMatch[1].trim() : "Doctor";
+
+        return (
+            <div className="my-2 overflow-hidden rounded-xl border border-violet-100 bg-violet-50/30 p-4 shadow-sm dark:border-violet-950/20 dark:bg-violet-950/10">
+                <div className="flex items-center gap-2 pb-2 border-b border-violet-100/60 dark:border-violet-950/20">
+                    <span className="text-violet-600 dark:text-violet-400 font-bold">🕒 Dr. {docName}'s Schedule</span>
+                </div>
+                {dateMatch && (
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        Date: <span className="font-semibold">{dateMatch[1].trim()}</span> {dayMatch && <span>({dayMatch[1].trim()})</span>}
+                    </div>
+                )}
+                <div className="mt-3.5">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Available Timeslots</span>
+                    {slots.length === 0 ? (
+                        <p className="mt-1 text-sm text-gray-500 italic">No timeslots found or all slots are booked.</p>
+                    ) : (
+                        <div className="mt-2 grid grid-cols-3 sm:grid-cols-4 gap-2">
+                            {slots.map((slot, sIdx) => {
+                                const isAvailable = slot.status.toLowerCase() === "available";
+                                return (
+                                    <div
+                                        key={sIdx}
+                                        className={`flex flex-col items-center justify-center py-2 px-1.5 rounded-lg border text-xs font-medium transition-all ${
+                                            isAvailable
+                                                ? "border-emerald-200 bg-emerald-50/40 text-emerald-800 dark:border-emerald-900/30 dark:bg-emerald-950/10 dark:text-emerald-400"
+                                                : "border-gray-200 bg-gray-100/40 text-gray-400 line-through dark:border-gray-800 dark:bg-gray-800/20 dark:text-gray-600"
+                                        }`}
+                                    >
+                                        <span>{slot.time}</span>
+                                        <span className="text-[9px] mt-0.5 opacity-80">{slot.status}</span>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // 4. Fallback: Parse basic markdown lines
     const lines = content.split('\n');
     return (
         <div className="space-y-1 text-[15px] leading-relaxed">

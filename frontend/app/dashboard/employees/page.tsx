@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Header } from "@/components/Header";
-import { Plus, Search, User, Stethoscope } from "lucide-react";
+import { Plus, Search, User, Stethoscope, Clock } from "lucide-react";
 import { useHospital } from "@/context/HospitalContext";
 import { AddEmployeeModal } from "@/components/AddEmployeeModal";
+import { ManageTimeslotsModal } from "@/components/ManageTimeslotsModal";
 
 interface Employee {
     id: number;
@@ -21,6 +22,8 @@ export default function EmployeesPage() {
     const [employees, setEmployees] = useState<Employee[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [isTimeslotsModalOpen, setIsTimeslotsModalOpen] = useState(false);
+    const [selectedDoctor, setSelectedDoctor] = useState<Employee | null>(null);
 
     const fetchEmployees = () => {
         if (!selectedHospitalId) return;
@@ -115,6 +118,18 @@ export default function EmployeesPage() {
                                             {new Date(employee.joined_date).toLocaleDateString()}
                                         </span>
                                     </div>
+                                    {employee.role.toUpperCase() === 'DOCTOR' && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedDoctor(employee);
+                                                setIsTimeslotsModalOpen(true);
+                                            }}
+                                            className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 border border-violet-200 text-violet-700 rounded-lg text-xs font-semibold hover:bg-violet-50 dark:border-violet-850 dark:text-violet-400 dark:hover:bg-violet-950/20 transition-colors cursor-pointer"
+                                        >
+                                            <Clock className="h-3.5 w-3.5" />
+                                            Timeslots
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         ))
@@ -126,6 +141,15 @@ export default function EmployeesPage() {
                 isOpen={isAddModalOpen}
                 onClose={() => setIsAddModalOpen(false)}
                 onSuccess={fetchEmployees}
+            />
+
+            <ManageTimeslotsModal
+                isOpen={isTimeslotsModalOpen}
+                onClose={() => {
+                    setIsTimeslotsModalOpen(false);
+                    setSelectedDoctor(null);
+                }}
+                doctor={selectedDoctor}
             />
         </div>
     );

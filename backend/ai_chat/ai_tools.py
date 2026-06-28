@@ -326,19 +326,41 @@ def search_doctors(name_query: str = "", hospital_id: int = None):
         name_query: Partial or full name of the doctor to search for. (Optional)
         hospital_id: The ID of the hospital to filter by. (Optional)
     """
-    query = Q(role='DOCTOR', is_active=True)
+    base_query = Q(role='DOCTOR', is_active=True)
     
+    name_filter = Q()
+    if name_query:
+        clean_name = name_query.strip()
+        if clean_name.lower().startswith("dr."):
+            clean_name = clean_name[3:].strip()
+        elif clean_name.lower().startswith("dr "):
+            clean_name = clean_name[3:].strip()
+            
+        name_parts = clean_name.split()
+        if len(name_parts) == 1:
+            name_filter = Q(first_name__icontains=name_parts[0]) | Q(last_name__icontains=name_parts[0])
+        else:
+            q_parts = Q()
+            for part in name_parts:
+                q_parts &= (Q(first_name__icontains=part) | Q(last_name__icontains=part))
+            name_filter = q_parts
+
+    query = base_query & name_filter
+    
+    h_id = None
     if hospital_id is not None:
         try:
-            query &= Q(hospital_id=int(hospital_id))
+            h_id = int(hospital_id)
+            query &= Q(hospital_id=h_id)
         except (ValueError, TypeError):
             pass
             
-    if name_query:
-        query &= (Q(first_name__icontains=name_query.strip()) | Q(last_name__icontains=name_query.strip()))
-        
     doctors = Employee.objects.filter(query)[:10]
     
+    # Fallback to global search if no results match within the selected hospital context
+    if not doctors.exists() and h_id is not None:
+        doctors = Employee.objects.filter(base_query & name_filter)[:10]
+        
     if not doctors.exists():
         return f"No active doctors found matching '{name_query}'."
         
@@ -434,6 +456,63 @@ def book_appointment(
     except Exception as e:
         return f"Error booking appointment: {str(e)}"
 
+@tool
+def get_doctor_timeslots(doctor_id: int, date_str: str):
+    """
+    Get the list of timeslots and booking status (available or booked) for a doctor on a specific date.
+    Args:
+        doctor_id: The unique ID of the doctor (Employee).
+        date_str: The date to check for availability (YYYY-MM-DD format).
+    """
+    import datetime
+    try:
+        doctor_id = int(doctor_id)
+    except (ValueError, TypeError):
+        return "Error: Invalid doctor ID."
+
+    try:
+        dt = datetime.datetime.strptime(date_str.strip(), "%Y-%m-%d")
+        day_of_week = dt.strftime("%A").upper()
+    except ValueError:
+        return "Error: date_str must be in YYYY-MM-DD format."
+
+    try:
+        doctor = Employee.objects.get(id=doctor_id, role='DOCTOR', is_active=True)
+    except Employee.DoesNotExist:
+        return f"Error: Doctor with ID {doctor_id} not found."
+
+    # Get weekly recurring timeslots
+    slots = DoctorTimeslot.objects.filter(doctor=doctor, day_of_week=day_of_week, is_active=True)
+    
+    # Get booked appointments on this date
+    from appointments.models import Appointment
+    booked_appointments = Appointment.objects.filter(
+        doctor=doctor,
+        appointment_date=dt.date(),
+        status='SCHEDULED'
+    )
+    booked_times = {app.appointment_time.strftime("%H:%M") for app in booked_appointments}
+
+    if not slots.exists():
+        return f"Dr. {doctor.first_name} {doctor.last_name} has no timeslots configured for {dt.strftime('%A')}s."
+
+    results = []
+    for slot in slots:
+        slot_time_str = slot.start_time.strftime("%H:%M")
+        status_str = "Booked" if slot_time_str in booked_times else "Available"
+        results.append({
+            "slot_id": slot.id,
+            "time": slot_time_str,
+            "status": status_str
+        })
+        
+    return {
+        "doctor_name": f"Dr. {doctor.first_name} {doctor.last_name}",
+        "date": date_str,
+        "day_of_week": day_of_week.capitalize(),
+        "timeslots": results
+    }
+
 # Map of available tools for the Agent
 available_tools = {
     'search_patients': search_patients,
@@ -443,5 +522,6 @@ available_tools = {
     'create_patient': create_patient,
     'update_patient': update_patient,
     'search_doctors': search_doctors,
-    'book_appointment': book_appointment
+    'book_appointment': book_appointment,
+    'get_doctor_timeslots': get_doctor_timeslots
 }
